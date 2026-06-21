@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { BookmarkPlus, Check, CirclePause, CircleX, Eye, Heart, Play, Star } from "lucide-react";
+import { BookmarkPlus, Check, CirclePause, CircleX, Eye, Heart, Play } from "lucide-react";
 import { notFound } from "next/navigation";
 import { setProgress, toggleFavorite } from "@/app/actions/library";
 import { AddToListForm } from "@/components/add-to-list-form";
@@ -66,7 +66,7 @@ export default async function TitlePage({ params }: Props) {
         {poster && <Image className="detail-poster" src={poster} width={440} height={660} alt={`${item.title} poster`} priority />}
         <div className="detail-copy"><div className="eyebrow">{kind === "movie" ? "Film" : "Television series"}</div><h1 className="display">{item.title}</h1>
           <div className="meta-line"><span>{yearOf(item.releaseDate)}</span><span>{minutesToLabel(item.runtime)}</span><span>{item.status}</span></div>
-          <div className="rating-source-row"><div><small>MovieTracker</small><strong><Star size={14} fill="currentColor" /> {communityScore?.toFixed(1) ?? "—"}<em>/10</em></strong></div><div><small>TMDB</small><strong>{item.voteAverage.toFixed(1)}<em>/10</em></strong></div>{externalRatings.map(source => <div key={source.source}><small>{source.source}</small><strong>{source.value}</strong></div>)}</div>
+          <div className="rating-source-row"><div><small>MovieTracker</small><strong>{communityScore?.toFixed(1) ?? "—"}<em>/10</em></strong></div><div><small>TMDB</small><strong>{item.voteAverage.toFixed(1)}<em>/10</em></strong></div>{externalRatings.map(source => <div key={source.source}><small>{source.source}</small><strong>{source.value}</strong></div>)}</div>
           {item.tagline && <p className="tagline">“{item.tagline}”</p>}<p className="overview">{item.overview}</p>
           {item.videos[0] && <a className="button accent" href="#trailer"><Play size={16} fill="currentColor" /> View trailer</a>}
         </div>

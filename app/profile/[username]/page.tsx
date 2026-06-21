@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CalendarDays, CheckCircle2, Film, Flame, History, List, MapPin, PauseCircle, Settings, Star, XCircle } from "lucide-react";
+import { CalendarDays, CheckCircle2, Film, Flame, Gauge, History, List, MapPin, PauseCircle, Settings, XCircle } from "lucide-react";
 import { notFound } from "next/navigation";
 import { followUser, unfollowUser } from "@/app/actions/social";
 import { MediaCard } from "@/components/media-card";
@@ -65,7 +65,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
     <section className="profile-stat-band" id="overview">
       <div><Film size={17} /><strong>{progressCount.count ?? 0}</strong><span>tracked titles</span></div>
       <div><History size={17} /><strong>{watchCount.count ?? 0}</strong><span>watch events</span></div>
-      <div><Star size={17} /><strong>{averageRating}</strong><span>average rating</span></div>
+      <div><Gauge size={17} /><strong>{averageRating}</strong><span>average rating</span></div>
       <div><List size={17} /><strong>{listCount.count ?? 0}</strong><span>lists</span></div>
     </section>
 
