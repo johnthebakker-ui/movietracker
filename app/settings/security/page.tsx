@@ -1,0 +1,3 @@
+import { deleteAccount } from "@/app/actions/profile";
+import { SecurityPanel } from "@/components/security-panel";
+export default function SecuritySettings(){return <div><h2 className="display" style={{fontSize:'2.5rem',marginTop:0}}>Security</h2><SecurityPanel/><section className="panel" style={{marginTop:20,borderColor:'color-mix(in srgb, var(--accent) 45%, var(--line))'}}><h3>Delete account</h3><p className="muted">Permanently delete your profile, history, lists, reviews, and authentication identity.</p><form action={deleteAccount}><button className="button accent">Permanently delete account</button></form></section></div>}

@@ -1,0 +1,15 @@
+import Link from "next/link";
+import { KeyRound } from "lucide-react";
+import { requestPasswordReset, signIn, signInWithGoogle, signUp } from "@/app/actions/auth";
+
+export default async function Login({ searchParams }: { searchParams: Promise<{ mode?: string; error?: string; message?: string }> }) {
+  const params = await searchParams; const signup=params.mode === "signup"; const reset=params.mode === "reset";
+  return <main className="auth-shell"><section className="auth-art"><div className="eyebrow">Every story leaves a mark</div><h1 className="display">Keep the ones that stay with you.</h1><p style={{maxWidth:540,color:'#c4c6c3',lineHeight:1.7}}>A private viewing diary, a public taste profile, and a rather good answer to “what should we watch?”</p></section><section className="auth-form-wrap"><div className="auth-form">
+    <div><div className="eyebrow">Welcome to MovieTracker</div><h2 className="display">{reset?"Reset password":signup?"Create account":"Sign in"}</h2></div>
+    {params.error && <div className="notice">{params.error}</div>}{params.message && <div className="notice">{params.message}</div>}
+    {!reset && <form action={signInWithGoogle}><button className="button ghost" style={{width:'100%'}} type="submit">Continue with Google</button></form>}
+    {!reset && <div className="divider">or use email</div>}
+    {reset ? <form className="auth-form" action={requestPasswordReset}><div className="field"><label>Email</label><input className="input" name="email" type="email" required autoComplete="email"/></div><button className="button accent"><KeyRound size={17}/> Send reset link</button></form> : signup ? <form className="auth-form" action={signUp}><div className="field"><label>Display name</label><input className="input" name="displayName" required maxLength={60}/></div><div className="field"><label>Username</label><input className="input" name="username" required minLength={3} maxLength={17} pattern="[A-Za-z0-9_]+"/></div><div className="field"><label>Email</label><input className="input" name="email" type="email" required autoComplete="email"/></div><div className="field"><label>Password</label><input className="input" name="password" type="password" required minLength={8} autoComplete="new-password"/></div><button className="button accent">Create my account</button></form> : <form className="auth-form" action={signIn}><div className="field"><label>Email</label><input className="input" name="email" type="email" required autoComplete="email"/></div><div className="field"><label>Password</label><input className="input" name="password" type="password" required autoComplete="current-password"/></div><button className="button accent">Sign in</button></form>}
+    <div className="muted" style={{textAlign:'center',fontSize:'.86rem'}}>{reset?<Link href="/login">Back to sign in</Link>:signup?<>Already a member? <Link href="/login">Sign in</Link></>:<>New here? <Link href="/login?mode=signup">Create an account</Link> · <Link href="/login?mode=reset">Forgot password?</Link></>}</div>
+  </div></section></main>;
+}

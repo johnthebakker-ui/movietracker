@@ -1,0 +1,1 @@
+export default function Loading() { return <main className="page"><div className="shell"><div className="empty-state"><div className="eyebrow">Loading</div><h2 className="display">Setting the scene…</h2></div></div></main>; }
