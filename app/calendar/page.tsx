@@ -90,6 +90,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const cells = Array.from({ length: leading + daysInMonth }, (_, index) => index < leading ? null : index - leading + 1);
   const today = new Date().toISOString().slice(0, 10);
   const monthHref = (date: Date) => `/calendar?mode=${mode}&month=${monthKey(date)}`;
+  const eventDays = [...eventsByDate.entries()].sort(([left], [right]) => left.localeCompare(right));
 
   return <main className="page"><div className="shell">
     <div className="page-heading-row"><div><div className="eyebrow">Your viewing schedule and diary</div><h1 className="display page-title">Calendar</h1><p className="muted">Switch between episodes due to air and everything you watched.</p></div><Link className="button ghost" href="/history">View full history</Link></div>
@@ -101,6 +102,22 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       const dayEvents = eventsByDate.get(date) ?? [];
       return <div className={`calendar-cell ${date === today ? "today" : ""}`} key={date}><div className="calendar-day-number">{day}</div>{dayEvents.map(event => <Link className={`calendar-event ${mode === "watched" ? "watched" : ""}`} href={event.href} key={event.id}><div className="calendar-event-image">{imageUrl(event.artwork, "w300") ? <Image src={imageUrl(event.artwork, "w300")!} alt="" fill sizes="180px" /> : event.kind === "movie" ? <Film size={16} /> : <Tv size={16} />}</div><div><strong>{event.title}</strong><span>{event.subtitle}</span></div></Link>)}</div>;
     })}</div></div>
+    <div className="calendar-mobile">
+      <div className="calendar-mobile-month">
+        <div className="calendar-mobile-weekdays">{["M", "T", "W", "T", "F", "S", "S"].map((day, index) => <span key={`${day}-${index}`}>{day}</span>)}</div>
+        <div className="calendar-mobile-grid">{cells.map((day, index) => {
+          if (!day) return <span className="blank" key={`mobile-blank-${index}`} />;
+          const date = `${requested}-${String(day).padStart(2, "0")}`;
+          const count = eventsByDate.get(date)?.length ?? 0;
+          const content = <><strong>{day}</strong>{count > 0 && <i aria-label={`${count} ${count === 1 ? "event" : "events"}`}>{count}</i>}</>;
+          return count > 0 ? <a className={date === today ? "today" : ""} href={`#calendar-day-${date}`} key={date}>{content}</a> : <span className={date === today ? "today" : ""} key={date}>{content}</span>;
+        })}</div>
+      </div>
+      {eventDays.length > 0 && <div className="calendar-mobile-agenda">{eventDays.map(([date, dayEvents]) => <section id={`calendar-day-${date}`} key={date}>
+        <header><time dateTime={date}>{new Date(`${date}T12:00:00Z`).toLocaleDateString("en", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}</time><span>{dayEvents.length}</span></header>
+        <div>{dayEvents.map(event => <Link className={`calendar-mobile-event ${mode === "watched" ? "watched" : ""}`} href={event.href} key={event.id}><div className="calendar-mobile-event-image">{imageUrl(event.artwork, "w300") ? <Image src={imageUrl(event.artwork, "w300")!} alt="" fill sizes="96px" /> : event.kind === "movie" ? <Film size={18} /> : <Tv size={18} />}</div><div><strong>{event.title}</strong><span>{event.subtitle}</span></div><ChevronRight size={17} /></Link>)}</div>
+      </section>)}</div>}
+    </div>
     {!events.length && <div className="calendar-empty-note"><CalendarDays size={19} /><span>{mode === "watched" ? "Nothing was logged in this month." : "No upcoming episodes found for this month. Track a series to populate it."}</span></div>}
   </div></main>;
 }
