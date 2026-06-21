@@ -31,6 +31,6 @@ export default async function ListDetail({ params }: { params: Promise<{ id: str
       <div className="list-detail-copy"><div className="eyebrow">{list.visibility} list · @{owner?.username}</div><h1 className="display">{list.name}</h1><p>{list.description || "A hand-picked collection."}</p><strong>{rows.length.toLocaleString()} {rows.length === 1 ? "title" : "titles"}</strong></div>
       {isOwner && <EditListDialog list={list} items={rows.map((row: any) => ({ id: row.media.id, title: row.media.title }))} />}
     </section>
-    {ratedItems.length ? <div className="media-grid section">{ratedItems.map(item => <MediaCard key={`${item.kind}-${item.id}`} item={item} />)}</div> : <div className="empty-state list-empty-state"><List size={30} /><h2 className="display">This list is waiting</h2><p className="muted">You can edit its name, description, privacy and cover now, then add titles from any movie or series page.</p>{isOwner && <EditListDialog list={list} items={[]} />}</div>}
+    {ratedItems.length ? <div className="media-grid section">{ratedItems.map((item, index) => <MediaCard key={`${item.kind}-${item.id}`} item={item} listContext={isOwner ? { id: list.id, mediaId: rows[index].media.id, name: list.name } : undefined} />)}</div> : <div className="empty-state list-empty-state"><List size={30} /><h2 className="display">This list is waiting</h2><p className="muted">You can edit its name, description, privacy and cover now, then add titles from any movie or series page.</p>{isOwner && <EditListDialog list={list} items={[]} />}</div>}
   </div></main>;
 }

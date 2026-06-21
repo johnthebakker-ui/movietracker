@@ -307,3 +307,24 @@ export async function addToList(_previous: ListActionState, form: FormData): Pro
     return { status: "error", message: error instanceof Error ? error.message : "Could not add this title" };
   }
 }
+
+export async function removeFromList(_previous: ListActionState, form: FormData): Promise<ListActionState> {
+  try {
+    const { supabase, user } = await userClient();
+    const values = z.object({
+      listId: z.string().uuid(),
+      mediaId: z.coerce.number().int().positive(),
+      path: z.string().startsWith("/lists/")
+    }).parse(Object.fromEntries(form));
+    const { data: list, error: listError } = await supabase.from("lists").select("id,name,featured_media_id").eq("id", values.listId).eq("user_id", user.id).single();
+    if (listError || !list) throw new Error("You do not have permission to edit this list");
+    const { error } = await supabase.from("list_items").delete().eq("list_id", list.id).eq("media_id", values.mediaId);
+    if (error) throw error;
+    if (Number(list.featured_media_id) === values.mediaId) await supabase.from("lists").update({ featured_media_id: null, updated_at: new Date().toISOString() }).eq("id", list.id).eq("user_id", user.id);
+    const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single();
+    revalidatePath(values.path); revalidatePath("/lists"); if (profile?.username) revalidatePath(`/profile/${profile.username}`);
+    return { status: "success", message: `Removed from ${list.name}` };
+  } catch (error) {
+    return { status: "error", message: error instanceof Error ? error.message : "Could not remove this title" };
+  }
+}
