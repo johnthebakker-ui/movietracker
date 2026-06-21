@@ -187,6 +187,8 @@ img { max-width: 100%; }
 .rating-score-grid button { width: 100%; min-height: 34px; padding: 0; border: 1px solid transparent; border-radius: 7px; color: var(--muted); background: var(--surface-2); display: flex; align-items: center; justify-content: center; gap: 4px; font-size: .7rem; cursor: pointer; }
 .rating-score-grid button svg { color: #ffc24b; }
 .rating-score-grid button:hover, .rating-score-grid button.active { border-color: color-mix(in srgb,#ffc24b 55%,transparent); color: var(--text); background: color-mix(in srgb,#ffc24b 10%,var(--surface-2)); }
+.rating-number-form { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.rating-number-form .input { min-width: 0; font-variant-numeric: tabular-nums; }
 .action-panel { display: grid; grid-template-columns: 1.3fr .8fr; gap: 24px; margin-top: -14px; position: relative; z-index: 3; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); }
 .panel h3 { margin: 0 0 14px; font-size: 1rem; }
@@ -501,6 +503,10 @@ img { max-width: 100%; }
 .review-composer-top strong small { color: var(--muted); font-family: inherit; font-size: .66rem; }
 .rating-clear { padding: 4px 0; border: 0; color: var(--muted); background: transparent; font-size: .65rem; cursor: pointer; }
 .rating-clear:hover { color: var(--text); }
+.review-score-controls { padding: 0 22px 14px; display: grid; grid-template-columns: minmax(180px,1fr) 150px; align-items: end; gap: 18px; }
+.review-score-controls > input[type="range"] { width: 100%; accent-color: var(--accent); }
+.review-score-controls label { display: grid; gap: 6px; color: var(--muted); font-size: .65rem; }
+.review-score-controls .input { min-height: 40px; font-variant-numeric: tabular-nums; }
 .review-score-picker { padding: 0 22px 22px; display: grid; grid-template-columns: repeat(10,1fr); gap: 5px; }
 .review-score-picker button { min-height: 42px; padding: 0 6px; border: 1px solid transparent; border-radius: 8px; color: var(--muted); background: color-mix(in srgb,var(--surface) 72%,transparent); display: flex; align-items: center; justify-content: center; gap: 5px; font-size: .68rem; cursor: pointer; transition: color .18s,border-color .18s,background .18s,transform .18s; }
 .review-score-picker button svg { color: #ffc24b; }
@@ -676,6 +682,7 @@ img { max-width: 100%; }
   .progress-state-card { min-width: 145px; }
   .profile-page .media-grid, .progress-recent-row { grid-template-columns: repeat(2, 1fr); }
   .review-section .section-head > p { display: none; }
+  .review-score-controls { grid-template-columns: 1fr; }
   .review-score-picker { grid-template-columns: repeat(5,1fr); }
   .review-composer-footer { align-items: stretch; flex-direction: column; }
   .review-composer-footer .button { width: 100%; }

@@ -4,15 +4,16 @@ import type { MediaSummary } from "@/lib/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fromDbMedia } from "@/lib/db-mappers";
 import { searchMedia } from "@/lib/tmdb";
+import { withCommunityRatings } from "@/lib/community-ratings";
 
 export async function searchCatalog(query: string): Promise<MediaSummary[]> {
   const supabase = await createSupabaseServerClient();
   const local = supabase ? (await supabase.from("media").select("*").ilike("title", `%${query.replace(/[%_]/g, "")}%`).is("deleted_at", null).order("popularity", { ascending:false }).limit(20)).data ?? [] : [];
   const mapped: MediaSummary[] = local.map(fromDbMedia);
-  if (mapped.length >= 12) return mapped;
+  if (mapped.length >= 12) return withCommunityRatings(mapped, supabase);
   const remote = await searchMedia(query);
   const keys = new Set(mapped.map(x => `${x.kind}-${x.id}`));
-  return [...mapped, ...remote.filter(x => !keys.has(`${x.kind}-${x.id}`))].slice(0, 24);
+  return withCommunityRatings([...mapped, ...remote.filter(x => !keys.has(`${x.kind}-${x.id}`))].slice(0, 24), supabase);
 }
 
 export async function ensureMedia(detail: MediaDetail) {

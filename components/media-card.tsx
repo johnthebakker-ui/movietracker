@@ -21,7 +21,7 @@ export function MediaCard({ item }: { item: MediaSummary }) {
     <Link href={`/title/${item.kind}/${item.id}`}>
       <div className="poster-wrap">
         {poster ? <Image className="poster" src={poster} alt={`${item.title} poster`} fill sizes="(max-width: 720px) 50vw, 17vw" /> : <div className="poster-fallback">{item.title}</div>}
-        {item.voteAverage > 0 && <span className="card-badge"><Star size={10} fill="currentColor" /> {item.voteAverage.toFixed(1)}</span>}
+        {item.communityRating != null && <span className="card-badge" title={`${item.communityRatingCount ?? 0} MovieTracker ratings`}><Star size={10} fill="currentColor" /> {item.communityRating.toFixed(1)}</span>}
       </div>
       <div className="card-title truncate">{item.title}</div>
       <div className="card-meta"><span>{yearOf(item.releaseDate)}</span><span>{item.kind === "show" ? "Series" : "Film"}</span></div>

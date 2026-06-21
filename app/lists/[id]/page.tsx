@@ -6,6 +6,7 @@ import { MediaCard } from "@/components/media-card";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fromDbMedia } from "@/lib/db-mappers";
 import { imageUrl } from "@/lib/tmdb";
+import { withCommunityRatings } from "@/lib/community-ratings";
 
 export default async function ListDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -22,6 +23,7 @@ export default async function ListDetail({ params }: { params: Promise<{ id: str
   const featured = rows.find((row: any) => row.media?.id === list.featured_media_id)?.media;
   const heroArt = list.cover_url || imageUrl(featured?.backdrop_path || featured?.poster_path, "original");
   const owner = Array.isArray(list.profiles) ? list.profiles[0] : list.profiles;
+  const ratedItems = await withCommunityRatings(rows.map((row: any) => fromDbMedia(row.media)), supabase);
 
   return <main className="page list-detail-page"><div className="shell">
     <section className={`list-detail-hero${heroArt ? " has-art" : ""}`}>
@@ -29,6 +31,6 @@ export default async function ListDetail({ params }: { params: Promise<{ id: str
       <div className="list-detail-copy"><div className="eyebrow">{list.visibility} list · @{owner?.username}</div><h1 className="display">{list.name}</h1><p>{list.description || "A hand-picked collection."}</p><strong>{rows.length.toLocaleString()} {rows.length === 1 ? "title" : "titles"}</strong></div>
       {isOwner && <EditListDialog list={list} items={rows.map((row: any) => ({ id: row.media.id, title: row.media.title }))} />}
     </section>
-    {rows.length ? <div className="media-grid section">{rows.map((row: any) => <MediaCard key={row.media.id} item={fromDbMedia(row.media)} />)}</div> : <div className="empty-state list-empty-state"><List size={30} /><h2 className="display">This list is waiting</h2><p className="muted">You can edit its name, description, privacy and cover now, then add titles from any movie or series page.</p>{isOwner && <EditListDialog list={list} items={[]} />}</div>}
+    {ratedItems.length ? <div className="media-grid section">{ratedItems.map(item => <MediaCard key={`${item.kind}-${item.id}`} item={item} />)}</div> : <div className="empty-state list-empty-state"><List size={30} /><h2 className="display">This list is waiting</h2><p className="muted">You can edit its name, description, privacy and cover now, then add titles from any movie or series page.</p>{isOwner && <EditListDialog list={list} items={[]} />}</div>}
   </div></main>;
 }

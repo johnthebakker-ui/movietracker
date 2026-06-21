@@ -7,6 +7,7 @@ import { InfiniteMediaGrid } from "@/components/infinite-media-grid";
 import { hasTmdb } from "@/lib/env";
 import { discover, getGenres } from "@/lib/tmdb";
 import type { MediaKind } from "@/lib/types";
+import { withCommunityRatings } from "@/lib/community-ratings";
 
 export const metadata: Metadata = { title: "Discover" };
 const validYear = (value?: string) => value && /^\d{4}$/.test(value) ? Number(value) : null;
@@ -20,8 +21,9 @@ export default async function Discover({ searchParams }: { searchParams: Promise
   const dateTo = mode === "exact" && exactYear ? `${exactYear}-12-31` : mode === "range" && toYear ? `${toYear}-12-31` : undefined;
   const tmdbFilters: Record<string, string | undefined> = { sort_by: params.sort ?? "popularity.desc", with_genres: params.genre, "vote_average.gte": params.rating, "vote_count.gte": params.rating ? "50" : undefined, "primary_release_date.gte": kind === "movie" ? dateFrom : undefined, "primary_release_date.lte": kind === "movie" ? dateTo : undefined, "first_air_date.gte": kind === "show" ? dateFrom : undefined, "first_air_date.lte": kind === "show" ? dateTo : undefined };
   const genres = await getGenres(kind); const data = invalidRange ? { items: [], page: 1, totalPages: 1 } : await discover(kind, tmdbFilters);
+  const ratedItems = await withCommunityRatings(data.items);
   const apiFilters = Object.fromEntries(Object.entries(tmdbFilters).filter((entry): entry is [string, string] => Boolean(entry[1])));
   return <main className="page"><div className="shell"><div className="page-heading-row discovery-heading"><div><div className="eyebrow">Find your next obsession</div><h1 className="display" style={{ fontSize: "clamp(3rem,7vw,6.5rem)", margin: "10px 0" }}>Discover</h1></div><Link className="button ghost" href="/recommendations"><Sparkles size={16} /> For you</Link></div><DiscoveryFilters kind={kind} genres={genres} params={params} />
-    {invalidRange ? <div className="notice">The starting year must be earlier than the ending year.</div> : data.items.length ? <InfiniteMediaGrid initialItems={data.items} initialPage={data.page} totalPages={data.totalPages} kind={kind} filters={apiFilters} /> : <div className="empty-state"><h2 className="display">No titles match these filters</h2><p className="muted">Try a wider year range or a lower rating threshold.</p></div>}
+    {invalidRange ? <div className="notice">The starting year must be earlier than the ending year.</div> : ratedItems.length ? <InfiniteMediaGrid initialItems={ratedItems} initialPage={data.page} totalPages={data.totalPages} kind={kind} filters={apiFilters} /> : <div className="empty-state"><h2 className="display">No titles match these filters</h2><p className="muted">Try a wider year range or a lower rating threshold.</p></div>}
   </div></main>;
 }

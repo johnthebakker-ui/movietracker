@@ -20,7 +20,7 @@ A production-oriented movie and series tracker built with Next.js, Supabase, and
    npm install
    ```
 
-2. Create a Supabase project. Run every numbered file in `supabase/migrations` in order (`0001` through `0006`) in its SQL editor or through the Supabase CLI.
+2. Create a Supabase project. Run every numbered file in `supabase/migrations` in order (`0001` through `0007`) in its SQL editor or through the Supabase CLI.
 
 3. Copy `.env.example` to `.env.local` and fill in:
 

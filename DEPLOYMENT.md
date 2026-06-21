@@ -56,7 +56,7 @@ In Supabase, open Authentication > URL Configuration:
   - `https://YOUR-PRODUCTION-DOMAIN/auth/callback`
   - `http://localhost:3000/auth/callback` if local development should keep working
 
-The existing Supabase database and users stay where they are; Vercel connects to the same project. Ensure migrations `0001` through `0006` have been run once.
+The existing Supabase database and users stay where they are; Vercel connects to the same project. Ensure migrations `0001` through `0007` have been run once.
 
 ## 5. Google sign-in
 

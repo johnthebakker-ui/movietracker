@@ -8,6 +8,7 @@ import { ListCardArt } from "@/components/list-card-art";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fromDbMedia } from "@/lib/db-mappers";
 import { imageUrl } from "@/lib/tmdb";
+import { withCommunityRatings } from "@/lib/community-ratings";
 
 export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
@@ -33,7 +34,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   ]);
   const privateProfile = profile.privacy_settings?.profile === "private";
   const statusRows = progressStatuses.data ?? [];
-  const currentlyWatching = statusRows.filter((row: any) => row.status === "watching" || row.status === "paused").map((row: any) => ({ status: row.status, updatedAt: row.updated_at, item: row.media ? fromDbMedia(row.media) : null })).filter(row => row.item);
+  const rawCurrentlyWatching = statusRows.filter((row: any) => row.status === "watching" || row.status === "paused").map((row: any) => ({ status: row.status, updatedAt: row.updated_at, item: row.media ? fromDbMedia(row.media) : null })).filter(row => row.item);
   const progressGroups = [
     { key: "completed", label: "Completed", icon: CheckCircle2, rows: statusRows.filter((row: any) => row.status === "completed") },
     { key: "active", label: "In progress", icon: PauseCircle, rows: statusRows.filter((row: any) => row.status === "watching" || row.status === "paused") },
@@ -43,7 +44,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   let currentStreak = 0; let longestStreak = 0; let running = 0; let previousDay: number | null = null;
   for (const day of [...watchedDays].reverse()) { const value = new Date(`${day}T12:00:00Z`).getTime(); running = previousDay !== null && value - previousDay === 86400000 ? running + 1 : 1; longestStreak = Math.max(longestStreak, running); previousDay = value; }
   if (watchedDays.length) { const cursor = new Date(); cursor.setUTCHours(0, 0, 0, 0); const latest = new Date(`${watchedDays[0]}T00:00:00Z`); if ((cursor.getTime() - latest.getTime()) / 86400000 <= 1) { for (const day of watchedDays) { const expected = cursor.toISOString().slice(0, 10); const yesterday = new Date(cursor.getTime() - 86400000).toISOString().slice(0, 10); if (day === expected || (currentStreak === 0 && day === yesterday)) { currentStreak++; cursor.setUTCDate(cursor.getUTCDate() - (day === expected ? 1 : 2)); } else break; } } }
-  const favoriteItems = (favorites.data ?? []).map((row: any) => row.media).filter(Boolean).map(fromDbMedia);
+  const rawFavoriteItems = (favorites.data ?? []).map((row: any) => row.media).filter(Boolean).map(fromDbMedia);
+  const ratedProfileItems = await withCommunityRatings([...rawCurrentlyWatching.map(row => row.item!), ...rawFavoriteItems], supabase);
+  const profileRatingMap = new Map(ratedProfileItems.map(item => [`${item.kind}-${item.id}`, item]));
+  const currentlyWatching = rawCurrentlyWatching.map(row => ({ ...row, item: profileRatingMap.get(`${row.item!.kind}-${row.item!.id}`) ?? row.item }));
+  const favoriteItems = rawFavoriteItems.map(item => profileRatingMap.get(`${item.kind}-${item.id}`) ?? item);
   const averageRating = ratings.data?.length ? (ratings.data.reduce((sum, row) => sum + Number(row.score), 0) / ratings.data.length).toFixed(1) : "—";
   const memberSince = new Date(profile.created_at).toLocaleDateString("en", { month: "long", year: "numeric" });
   return <main className="page profile-page"><div className="shell">

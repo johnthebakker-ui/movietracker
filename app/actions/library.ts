@@ -8,6 +8,10 @@ import { slugify } from "@/lib/utils";
 import { getMedia, getSeason } from "@/lib/tmdb";
 import { ensureMedia, ensureSeason } from "@/lib/catalog";
 import { pushTraktHistory, pushTraktRating, pushTraktWatchlist, removeTraktHistory } from "@/lib/trakt";
+import { isValidRating } from "@/lib/ratings";
+
+const ratingValue = z.coerce.number().refine(isValidRating, "Rating must be from 1.0 to 10.0 in 0.1 steps");
+const optionalRatingValue = z.preprocess(value => value === "" || value == null ? undefined : value, ratingValue.optional());
 
 async function userClient() {
   const supabase = await createSupabaseServerClient();
@@ -168,19 +172,19 @@ export async function removeTargetWatches(form: FormData) {
 
 export async function rateTitle(form: FormData) {
   const { supabase, user } = await userClient();
-  const values = z.object({ mediaId: z.coerce.number(), score: z.coerce.number().min(.5).max(5).refine((v) => Number.isInteger(v * 2)), path: z.string() }).parse(Object.fromEntries(form));
+  const values = z.object({ mediaId: z.coerce.number(), score: ratingValue, path: z.string() }).parse(Object.fromEntries(form));
   const { data: existing } = await supabase.from("ratings").select("id").eq("user_id", user.id).eq("media_id", values.mediaId).maybeSingle();
   const operation = existing ? supabase.from("ratings").update({ score: values.score, updated_at: new Date().toISOString() }).eq("id", existing.id).select("id").single() : supabase.from("ratings").insert({ user_id: user.id, media_id: values.mediaId, score: values.score }).select("id").single();
   const { data: savedRating, error } = await operation;
   if (error) throw error;
   if (savedRating) await supabase.from("reviews").update({ rating_id: savedRating.id, updated_at: new Date().toISOString() }).eq("user_id", user.id).eq("media_id", values.mediaId);
-  try { const { data: media } = await supabase.from("media").select("tmdb_id,kind").eq("id", values.mediaId).single(); if (media) await pushTraktRating(user.id, { kind: media.kind, tmdbId: media.tmdb_id, score: values.score }); } catch (traktError) { console.error("Trakt rating push failed", traktError); }
+  try { const { data: media } = await supabase.from("media").select("tmdb_id,kind").eq("id", values.mediaId).single(); if (media) { await pushTraktRating(user.id, { kind: media.kind, tmdbId: media.tmdb_id, score: values.score }); await supabase.from("ratings").update({ updated_at: new Date().toISOString() }).eq("id", savedRating.id); } } catch (traktError) { console.error("Trakt rating push failed", traktError); }
   revalidatePath(values.path);
 }
 
 export async function writeReview(form: FormData) {
   const { supabase, user } = await userClient();
-  const values = z.object({ mediaId: z.coerce.number(), score: z.preprocess(value => value === "" || value == null ? undefined : value, z.coerce.number().min(.5).max(5).refine(value => Number.isInteger(value * 2)).optional()), title: z.string().max(120), body: z.string().min(1).max(10000), spoilers: z.string().optional(), path: z.string() }).parse(Object.fromEntries(form));
+  const values = z.object({ mediaId: z.coerce.number(), score: optionalRatingValue, title: z.string().max(120), body: z.string().min(1).max(10000), spoilers: z.string().optional(), path: z.string() }).parse(Object.fromEntries(form));
   let { data: rating } = await supabase.from("ratings").select("id,score").eq("user_id", user.id).eq("media_id", values.mediaId).maybeSingle();
   if (values.score !== undefined) {
     if (rating) { const result = await supabase.from("ratings").update({ score: values.score, updated_at: new Date().toISOString() }).eq("id", rating.id).select("id,score").single(); rating = result.data; if (result.error) throw result.error; }
@@ -188,13 +192,13 @@ export async function writeReview(form: FormData) {
   }
   const { error } = await supabase.from("reviews").insert({ user_id: user.id, media_id: values.mediaId, rating_id: rating?.id ?? null, title: values.title || null, body: values.body, contains_spoilers: values.spoilers === "on" });
   if (error) throw error;
-  if (values.score !== undefined) { try { const { data: media } = await supabase.from("media").select("tmdb_id,kind").eq("id", values.mediaId).single(); if (media) await pushTraktRating(user.id, { kind: media.kind, tmdbId: media.tmdb_id, score: values.score }); } catch (error) { console.error("Trakt review rating push failed", error); } }
+  if (values.score !== undefined) { try { const { data: media } = await supabase.from("media").select("tmdb_id,kind").eq("id", values.mediaId).single(); if (media) { await pushTraktRating(user.id, { kind: media.kind, tmdbId: media.tmdb_id, score: values.score }); if (rating?.id) await supabase.from("ratings").update({ updated_at: new Date().toISOString() }).eq("id", rating.id); } } catch (error) { console.error("Trakt review rating push failed", error); } }
   revalidatePath(values.path);
 }
 
 export async function rateTarget(form: FormData) {
   const { supabase, user } = await userClient();
-  const values = z.object({ targetType: z.enum(["season", "episode"]), targetId: z.coerce.number().int().positive(), score: z.coerce.number().min(.5).max(5).refine(value => Number.isInteger(value * 2)), path: z.string() }).parse(Object.fromEntries(form));
+  const values = z.object({ targetType: z.enum(["season", "episode"]), targetId: z.coerce.number().int().positive(), score: ratingValue, path: z.string() }).parse(Object.fromEntries(form));
   const column = values.targetType === "season" ? "season_id" : "episode_id";
   const { data: existing } = await supabase.from("ratings").select("id").eq("user_id", user.id).eq(column, values.targetId).maybeSingle();
   const payload = { score: values.score, updated_at: new Date().toISOString() };
@@ -207,7 +211,7 @@ export async function rateTarget(form: FormData) {
 
 export async function writeTargetReview(form: FormData) {
   const { supabase, user } = await userClient();
-  const values = z.object({ targetType: z.enum(["season", "episode"]), targetId: z.coerce.number().int().positive(), score: z.preprocess(value => value === "" || value == null ? undefined : value, z.coerce.number().min(.5).max(5).refine(value => Number.isInteger(value * 2)).optional()), title: z.string().max(120), body: z.string().min(1).max(10000), spoilers: z.string().optional(), path: z.string() }).parse(Object.fromEntries(form));
+  const values = z.object({ targetType: z.enum(["season", "episode"]), targetId: z.coerce.number().int().positive(), score: optionalRatingValue, title: z.string().max(120), body: z.string().min(1).max(10000), spoilers: z.string().optional(), path: z.string() }).parse(Object.fromEntries(form));
   const column = values.targetType === "season" ? "season_id" : "episode_id";
   let { data: rating } = await supabase.from("ratings").select("id,score").eq("user_id", user.id).eq(column, values.targetId).maybeSingle();
   if (values.score !== undefined) {

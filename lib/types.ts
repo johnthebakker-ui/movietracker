@@ -20,6 +20,8 @@ export interface MediaSummary {
   releaseDate: string | null;
   voteAverage: number;
   voteCount: number;
+  communityRating?: number | null;
+  communityRatingCount?: number;
   popularity: number;
   genres: Genre[];
 }

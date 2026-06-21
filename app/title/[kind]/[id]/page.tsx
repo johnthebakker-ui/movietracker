@@ -18,6 +18,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMedia, imageUrl } from "@/lib/tmdb";
 import type { MediaKind } from "@/lib/types";
 import { minutesToLabel, yearOf } from "@/lib/utils";
+import { withCommunityRatings } from "@/lib/community-ratings";
 
 type Props = { params: Promise<{ kind: string; id: string }> };
 
@@ -52,6 +53,7 @@ export default async function TitlePage({ params }: Props) {
     reviews = results[0].data ?? []; const communityRatings = results[1].data ?? []; communityScore = communityRatings.length ? communityRatings.reduce((sum: number, row: any) => sum + Number(row.score), 0) / communityRatings.length : null;
     if (user) { state = results[2].data; rating = results[3].data; favorite = Boolean(results[4].data); lists = results[5].data ?? []; watched = Boolean(results[6].count); }
   }
+  const ratedRecommendations = await withCommunityRatings(item.recommendations, supabase);
   const path = `/title/${kind}/${item.id}`;
   const backdrop = imageUrl(item.backdropPath, "original");
   const poster = imageUrl(item.posterPath, "w500");
@@ -64,7 +66,7 @@ export default async function TitlePage({ params }: Props) {
         {poster && <Image className="detail-poster" src={poster} width={440} height={660} alt={`${item.title} poster`} priority />}
         <div className="detail-copy"><div className="eyebrow">{kind === "movie" ? "Film" : "Television series"}</div><h1 className="display">{item.title}</h1>
           <div className="meta-line"><span>{yearOf(item.releaseDate)}</span><span>{minutesToLabel(item.runtime)}</span><span>{item.status}</span></div>
-          <div className="rating-source-row"><div><small>MovieTracker</small><strong><Star size={14} fill="currentColor" /> {communityScore?.toFixed(1) ?? "—"}<em>/5</em></strong></div><div><small>TMDB</small><strong>{item.voteAverage.toFixed(1)}<em>/10</em></strong></div>{externalRatings.map(source => <div key={source.source}><small>{source.source}</small><strong>{source.value}</strong></div>)}</div>
+          <div className="rating-source-row"><div><small>MovieTracker</small><strong><Star size={14} fill="currentColor" /> {communityScore?.toFixed(1) ?? "—"}<em>/10</em></strong></div><div><small>TMDB</small><strong>{item.voteAverage.toFixed(1)}<em>/10</em></strong></div>{externalRatings.map(source => <div key={source.source}><small>{source.source}</small><strong>{source.value}</strong></div>)}</div>
           {item.tagline && <p className="tagline">“{item.tagline}”</p>}<p className="overview">{item.overview}</p>
           {item.videos[0] && <a className="button accent" href="#trailer"><Play size={16} fill="currentColor" /> View trailer</a>}
         </div>
@@ -89,7 +91,7 @@ export default async function TitlePage({ params }: Props) {
       {item.companies.length > 0 && <section className="section"><div className="section-head"><div><div className="eyebrow">Behind the production</div><h2 className="display">Studios & companies</h2></div></div><div className="company-grid">{item.companies.map(company => <Link className="company-chip" href={`/company/${company.id}`} key={company.id}><div className="company-chip-logo">{company.logo_path ? <Image src={imageUrl(company.logo_path,"w185")!} width={120} height={64} alt="" /> : <span>{company.name.slice(0,1)}</span>}</div><strong>{company.name}</strong></Link>)}</div></section>}
       {mediaId && user && <section className="section review-section"><div className="section-head"><div><div className="eyebrow">Your take</div><h2 className="display">Write a review</h2></div><p>One score, one opinion. Changing it here also updates your rating above.</p></div><ReviewComposer targetType="media" targetId={mediaId} path={path} currentRating={rating?.score} /></section>}
       <section className="section"><div className="section-head"><div><div className="eyebrow">From the community</div><h2 className="display">Reviews</h2></div></div>{reviews.length ? <div className="review-grid">{reviews.map((review)=><ReviewCard review={review} key={review.id} />)}</div> : <div className="empty-state"><h2 className="display">No reviews yet</h2><p className="muted">The opening line could be yours.</p></div>}</section>
-      {item.recommendations.length > 0 && <MediaSection eyebrow="If this stayed with you" title="More like this" items={item.recommendations}/>} 
+      {ratedRecommendations.length > 0 && <MediaSection eyebrow="If this stayed with you" title="More like this" items={ratedRecommendations}/>}
     </div>
   </main>;
 }
