@@ -142,8 +142,9 @@ img { max-width: 100%; }
 .context-list-search { height: 36px; margin: 7px 5px 5px; padding: 0 9px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); background: var(--surface-2); display: flex; align-items: center; gap: 7px; }
 .context-list-search input { min-width: 0; flex: 1; border: 0; outline: 0; color: var(--text); background: transparent; font: inherit; font-size: .7rem; }
 .context-list-options { max-height: min(220px,32vh); padding: 0 3px; overflow-y: auto; overscroll-behavior: contain; }
-.context-list-options button { justify-content: space-between; }
-.context-list-options button > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.context-list-options button { display: grid; grid-template-columns: minmax(0,1fr) 68px; justify-content: stretch; }
+.context-list-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.context-list-action { width: 68px; display: inline-flex; align-items: center; justify-content: flex-start; gap: 6px; white-space: nowrap; }
 .context-list-options button.contained { color: #8ee5b1; }
 .context-remove-section { margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--line); }
 .context-remove-section > span { display: block; padding: 2px 8px; color: var(--muted); font-size: .61rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
