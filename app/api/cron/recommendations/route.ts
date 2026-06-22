@@ -1,0 +1,4 @@
+import { NextResponse } from "next/server";
+import { ensureRecommendations } from "@/lib/recommendations";
+import { createSupabaseAdminClient } from "@/lib/supabase/server";
+export async function GET(request: Request) { if (!process.env.CRON_SECRET || request.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); const admin = createSupabaseAdminClient(); if (!admin) return NextResponse.json({ error: "Supabase admin is not configured" }, { status: 500 }); const users = (await admin.from("profiles").select("id").order("created_at", { ascending: true }).limit(20)).data ?? []; const results = await Promise.allSettled(users.map(user => ensureRecommendations(user.id, true))); return NextResponse.json({ refreshed: results.filter(result => result.status === "fulfilled").length, failed: results.filter(result => result.status === "rejected").length }); }

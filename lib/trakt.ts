@@ -5,6 +5,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { getMedia, getSeason } from "@/lib/tmdb";
 import { decryptTraktToken, encryptTraktToken } from "@/lib/trakt-crypto";
 import type { MediaKind } from "@/lib/types";
+import { invalidateRecommendations } from "@/lib/recommendations";
 
 const TRAKT_API = "https://api.trakt.tv";
 const TRAKT_TIMEOUT_MS = 12_000;
@@ -136,6 +137,7 @@ export async function syncTraktForUser(userId: string, force = false) {
     if (!force && !firstSync && !changed) { await reconcileShowProgress(userId); await admin.from("trakt_connections").update({ last_synced_at: new Date().toISOString(), last_error: null }).eq("user_id", userId); return { skipped: true, history: 0, ratings: 0, watchlist: 0 }; }
     const startAt = firstSync ? undefined : new Date(new Date(auth.row.last_synced_at!).getTime() - 10 * 60_000).toISOString();
     const history = await importHistory(userId, auth, startAt); const ratings = await importRatings(userId, auth); const watchlist = await importWatchlist(userId, auth); await reconcileShowProgress(userId);
+    await invalidateRecommendations(userId);
     await admin.from("trakt_connections").update({ last_synced_at: new Date().toISOString(), last_activities: activities, last_error: null, updated_at: new Date().toISOString() }).eq("user_id", userId);
     return { skipped: false, history, ratings, watchlist };
   } catch (error) { const message = error instanceof Error ? error.message : "Trakt synchronization failed"; await admin.from("trakt_connections").update({ last_error: message, updated_at: new Date().toISOString() }).eq("user_id", userId); throw error; }

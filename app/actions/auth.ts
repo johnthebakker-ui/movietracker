@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env";
+import { needsMfaChallenge } from "@/lib/auth-security";
 
 function text(form: FormData, name: string) { return String(form.get(name) ?? "").trim(); }
 
@@ -11,6 +12,7 @@ export async function signIn(form: FormData) {
   if (!supabase) redirect("/login?error=Supabase+is+not+configured");
   const { error } = await supabase.auth.signInWithPassword({ email: text(form, "email"), password: text(form, "password") });
   if (error) redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  if (await needsMfaChallenge(supabase)) redirect("/auth/mfa?next=/");
   redirect("/");
 }
 

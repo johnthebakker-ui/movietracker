@@ -46,6 +46,9 @@ export async function ensureMedia(detail: MediaDetail) {
     popularity: detail.popularity,
     number_of_seasons: detail.numberOfSeasons,
     number_of_episodes: detail.numberOfEpisodes,
+    collection_tmdb_id: detail.collectionTmdbId ?? raw.belongs_to_collection?.id ?? null,
+    collection_name: detail.collectionName ?? raw.belongs_to_collection?.name ?? null,
+    collection_poster_path: detail.collectionPosterPath ?? raw.belongs_to_collection?.poster_path ?? null,
     raw,
     synced_at: new Date().toISOString(),
     deleted_at: null
@@ -60,6 +63,22 @@ export async function ensureMedia(detail: MediaDetail) {
     })), { onConflict: "media_id,season_number" });
   }
   return data.id as number;
+}
+
+export async function ensureMediaSummaries(items: MediaSummary[]) {
+  const admin = createSupabaseAdminClient();
+  if (!admin || !items.length) return [];
+  const rows = items.map(item => ({
+    tmdb_id: item.id, kind: item.kind, title: item.title, overview: item.overview,
+    poster_path: item.posterPath, backdrop_path: item.backdropPath, release_date: item.releaseDate,
+    genres: item.genres, vote_average: item.voteAverage, vote_count: item.voteCount,
+    popularity: item.popularity, collection_tmdb_id: item.collectionTmdbId ?? null,
+    collection_name: item.collectionName ?? null, collection_poster_path: item.collectionPosterPath ?? null,
+    synced_at: new Date().toISOString(), deleted_at: null
+  }));
+  const { data, error } = await admin.from("media").upsert(rows, { onConflict: "tmdb_id,kind" }).select("id,tmdb_id,kind");
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function ensureSeason(mediaId: number, detail: SeasonDetail) {

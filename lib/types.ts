@@ -24,6 +24,9 @@ export interface MediaSummary {
   communityRatingCount?: number;
   popularity: number;
   genres: Genre[];
+  collectionTmdbId?: number | null;
+  collectionName?: string | null;
+  collectionPosterPath?: string | null;
 }
 
 export interface SeasonSummary {

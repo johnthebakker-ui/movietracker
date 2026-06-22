@@ -7,7 +7,7 @@ export function SecurityPanel(){
   useEffect(()=>{supabase?.auth.mfa.listFactors().then(({data})=>setFactors(data?.totp??[]));},[supabase]);
   async function enroll(){if(!supabase)return;const {data,error}=await supabase.auth.mfa.enroll({factorType:"totp",friendlyName:"MovieTracker authenticator"});if(error)return setMessage(error.message);setQr(data.totp.qr_code);setFactorId(data.id);}
   async function verify(){if(!supabase)return;const challenge=await supabase.auth.mfa.challenge({factorId});if(challenge.error)return setMessage(challenge.error.message);const result=await supabase.auth.mfa.verify({factorId,challengeId:challenge.data.id,code});if(result.error)return setMessage(result.error.message);setMessage("Authenticator enabled.");setQr("");location.reload();}
-  async function remove(id:string){if(!supabase)return;const {error}=await supabase.auth.mfa.unenroll({factorId:id});setMessage(error?.message??"Authenticator removed.");location.reload();}
+  async function remove(id:string){if(!supabase)return;const level=await supabase.auth.mfa.getAuthenticatorAssuranceLevel();if(level.data?.currentLevel!=="aal2")return setMessage("Verify your authenticator in a new session before removing it.");const {error}=await supabase.auth.mfa.unenroll({factorId:id});setMessage(error?.message??"Authenticator removed.");if(!error)location.reload();}
   async function updatePassword(form:React.FormEvent<HTMLFormElement>){form.preventDefault();if(!supabase)return;const password=new FormData(form.currentTarget).get("password") as string;const {error}=await supabase.auth.updateUser({password});setMessage(error?.message??"Password updated.");}
   return <div style={{display:'grid',gap:20}}>
     {message&&<div className="notice">{message}</div>}

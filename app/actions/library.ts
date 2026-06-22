@@ -9,6 +9,8 @@ import { getMedia, getSeason } from "@/lib/tmdb";
 import { ensureMedia, ensureSeason } from "@/lib/catalog";
 import { pushTraktHistory, pushTraktRating, pushTraktWatchlist, removeTraktHistory } from "@/lib/trakt";
 import { isValidRating } from "@/lib/ratings";
+import { requireMfaIfEnrolled } from "@/lib/auth-security";
+import { invalidateRecommendations } from "@/lib/recommendations";
 
 const ratingValue = z.coerce.number().refine(isValidRating, "Rating must be from 1.0 to 10.0 in 0.1 steps");
 const optionalRatingValue = z.preprocess(value => value === "" || value == null ? undefined : value, ratingValue.optional());
@@ -18,6 +20,8 @@ async function userClient() {
   if (!supabase) throw new Error("Supabase is not configured");
   const { data } = await supabase.auth.getUser();
   if (!data.user) redirect("/login?message=Sign+in+to+save+your+progress");
+  await requireMfaIfEnrolled(supabase);
+  await invalidateRecommendations(data.user.id);
   return { supabase, user: data.user };
 }
 

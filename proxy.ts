@@ -16,7 +16,11 @@ export async function proxy(request: NextRequest) {
       }
     }
   });
-  await supabase.auth.getUser();
+  const user = (await supabase.auth.getUser()).data.user;
+  if (user) {
+    const path = request.nextUrl.pathname; const allowed = path === "/login" || path.startsWith("/auth/mfa") || path.startsWith("/auth/callback");
+    if (!allowed) { const assurance = await supabase.auth.mfa.getAuthenticatorAssuranceLevel(); if (assurance.data?.nextLevel === "aal2" && assurance.data.currentLevel !== "aal2") { if (path.startsWith("/api/")) return NextResponse.json({ error: "MFA challenge required" }, { status: 403 }); const target = request.nextUrl.clone(); target.pathname = "/auth/mfa"; target.search = `?next=${encodeURIComponent(path + request.nextUrl.search)}`; const redirectResponse = NextResponse.redirect(target); response.cookies.getAll().forEach(cookie => redirectResponse.cookies.set(cookie)); return redirectResponse; } }
+  }
   return response;
 }
 

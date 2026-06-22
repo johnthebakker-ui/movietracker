@@ -1,0 +1,5 @@
+import { NextResponse } from "next/server";
+import { recommendationPage } from "@/lib/recommendations";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { withCommunityRatings } from "@/lib/community-ratings";
+export async function GET(request: Request) { const supabase = await createSupabaseServerClient(); const user = supabase ? (await supabase.auth.getUser()).data.user : null; if (!supabase || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); const p = new URL(request.url).searchParams; const cursor = Math.max(0, Number(p.get("cursor") ?? 0) || 0); const result = await recommendationPage(supabase, user.id, { kind: p.get("kind") || undefined, genre: p.get("genre") || undefined, year: p.get("year") || undefined, hideWatched: p.get("hideWatched") !== "0", hideListed: p.get("hideListed") === "1" }, cursor); const rated = await withCommunityRatings(result.items.map(entry => entry.item), supabase); return NextResponse.json({ ...result, items: result.items.map((entry, index) => ({ ...entry, item: rated[index] })) }); }
