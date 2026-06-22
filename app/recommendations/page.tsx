@@ -3,7 +3,6 @@ import { InfiniteRecommendationGrid } from "@/components/infinite-recommendation
 import { discover, getGenres, getMedia, getTrending } from "@/lib/tmdb";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { MediaKind, MediaSummary } from "@/lib/types";
-import { syncTraktForUser } from "@/lib/trakt";
 import { withCommunityRatings } from "@/lib/community-ratings";
 
 type Filters = { kind?: string; genre?: string; year?: string; unwatched?: string };
@@ -12,7 +11,6 @@ type Signal = { media: DbMedia; weight: number; reason: string };
 
 export default async function Recommendations({ searchParams }: { searchParams: Promise<Filters> }) {
   const filters = await searchParams; const supabase = await createSupabaseServerClient(); const user = supabase ? (await supabase.auth.getUser()).data.user : null; if (!user || !supabase) redirect("/login");
-  await syncTraktForUser(user.id).catch(error => console.error("Recommendation pre-sync failed", error));
   const genres = await getGenres();
   const [ratingResult, favoriteResult, progressResult] = await Promise.all([
     supabase.from("ratings").select("score,media(tmdb_id,kind,title)").eq("user_id", user.id).gte("score", 7).order("score", { ascending: false }).limit(12),

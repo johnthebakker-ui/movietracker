@@ -328,3 +328,27 @@ export async function removeFromList(_previous: ListActionState, form: FormData)
     return { status: "error", message: error instanceof Error ? error.message : "Could not remove this title" };
   }
 }
+
+export async function addCatalogTitleToList(_previous: ListActionState, form: FormData): Promise<ListActionState> {
+  try {
+    const { supabase, user } = await userClient();
+    const values = z.object({ listId: z.string().uuid(), tmdbId: z.coerce.number().int().positive(), kind: z.enum(["movie", "show"]) }).parse(Object.fromEntries(form));
+    const { data: list, error: listError } = await supabase.from("lists").select("id,name").eq("id", values.listId).eq("user_id", user.id).single();
+    if (listError || !list) throw new Error("You do not have permission to edit this list");
+    const detail = await getMedia(values.kind, values.tmdbId);
+    const mediaId = await ensureMedia(detail);
+    if (!mediaId) throw new Error("Could not save this title");
+    const [{ data: existing }, { count }] = await Promise.all([
+      supabase.from("list_items").select("id").eq("list_id", list.id).eq("media_id", mediaId).maybeSingle(),
+      supabase.from("list_items").select("id", { count: "exact", head: true }).eq("list_id", list.id)
+    ]);
+    if (existing) return { status: "success", message: `Already in ${list.name}` };
+    const { error } = await supabase.from("list_items").insert({ list_id: list.id, media_id: mediaId, position: count ?? 0 });
+    if (error) throw error;
+    const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single();
+    revalidatePath(`/lists/${list.id}`); revalidatePath("/lists"); if (profile?.username) revalidatePath(`/profile/${profile.username}`);
+    return { status: "success", message: `Added to ${list.name}` };
+  } catch (error) {
+    return { status: "error", message: error instanceof Error ? error.message : "Could not add this title" };
+  }
+}

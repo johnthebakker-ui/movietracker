@@ -7,6 +7,7 @@ import { decryptTraktToken, encryptTraktToken } from "@/lib/trakt-crypto";
 import type { MediaKind } from "@/lib/types";
 
 const TRAKT_API = "https://api.trakt.tv";
+const TRAKT_TIMEOUT_MS = 12_000;
 
 type ConnectionRow = {
   user_id: string; trakt_user_id: string | null; trakt_username: string | null;
@@ -24,13 +25,13 @@ export function traktAuthorizeUrl(state: string) {
 }
 
 export async function exchangeTraktCode(code: string) {
-  configured(); const response = await fetch(`${TRAKT_API}/oauth/token`, { method: "POST", headers: { "content-type": "application/json", accept: "application/json", "user-agent": "MovieTracker/0.1", "trakt-api-version": "2", "trakt-api-key": env.traktClientId! }, body: JSON.stringify({ code, client_id: env.traktClientId, client_secret: env.traktClientSecret, redirect_uri: env.traktRedirectUri, grant_type: "authorization_code" }), cache: "no-store" });
+  configured(); const response = await fetch(`${TRAKT_API}/oauth/token`, { method: "POST", headers: { "content-type": "application/json", accept: "application/json", "user-agent": "MovieTracker/0.1", "trakt-api-version": "2", "trakt-api-key": env.traktClientId! }, body: JSON.stringify({ code, client_id: env.traktClientId, client_secret: env.traktClientSecret, redirect_uri: env.traktRedirectUri, grant_type: "authorization_code" }), cache: "no-store", signal: AbortSignal.timeout(TRAKT_TIMEOUT_MS) });
   if (!response.ok) { const payload = await response.json().catch(() => ({})) as { error?: string; error_description?: string }; const reason = payload.error_description ?? payload.error; throw new Error(`Trakt authorization failed (${response.status})${reason ? `: ${reason}` : response.status === 403 ? ": Trakt rejected the application credentials or callback URL" : ""}`); }
   return response.json() as Promise<{ access_token: string; refresh_token: string; expires_in: number; created_at: number; scope?: string }>;
 }
 
 async function refreshTraktAuth(auth: TraktAuth): Promise<TraktAuth> {
-  configured(); const response = await fetch(`${TRAKT_API}/oauth/token`, { method: "POST", headers: { "content-type": "application/json", accept: "application/json", "user-agent": "MovieTracker/0.1", "trakt-api-version": "2", "trakt-api-key": env.traktClientId! }, body: JSON.stringify({ refresh_token: auth.refreshToken, client_id: env.traktClientId, client_secret: env.traktClientSecret, redirect_uri: env.traktRedirectUri, grant_type: "refresh_token" }), cache: "no-store" });
+  configured(); const response = await fetch(`${TRAKT_API}/oauth/token`, { method: "POST", headers: { "content-type": "application/json", accept: "application/json", "user-agent": "MovieTracker/0.1", "trakt-api-version": "2", "trakt-api-key": env.traktClientId! }, body: JSON.stringify({ refresh_token: auth.refreshToken, client_id: env.traktClientId, client_secret: env.traktClientSecret, redirect_uri: env.traktRedirectUri, grant_type: "refresh_token" }), cache: "no-store", signal: AbortSignal.timeout(TRAKT_TIMEOUT_MS) });
   if (!response.ok) throw new Error(`Trakt token refresh failed (${response.status})`);
   const token = await response.json() as { access_token: string; refresh_token: string; expires_in: number; created_at: number; scope?: string };
   const admin = createSupabaseAdminClient(); if (!admin) throw new Error("Supabase service client is unavailable");
@@ -51,7 +52,7 @@ export async function getTraktConnection(userId: string): Promise<TraktAuth | nu
 function apiHeaders(auth: TraktAuth) { return { "content-type": "application/json", accept: "application/json", "user-agent": "MovieTracker/0.1", authorization: `Bearer ${auth.accessToken}`, "trakt-api-version": "2", "trakt-api-key": env.traktClientId! }; }
 
 async function traktFetch(auth: TraktAuth, path: string, init?: RequestInit) {
-  const response = await fetch(`${TRAKT_API}${path}`, { ...init, headers: { ...apiHeaders(auth), ...(init?.headers ?? {}) }, cache: "no-store" });
+  const response = await fetch(`${TRAKT_API}${path}`, { ...init, headers: { ...apiHeaders(auth), ...(init?.headers ?? {}) }, cache: "no-store", signal: init?.signal ?? AbortSignal.timeout(TRAKT_TIMEOUT_MS) });
   if (!response.ok) throw new Error(`Trakt request ${path} failed (${response.status})`); return response;
 }
 
