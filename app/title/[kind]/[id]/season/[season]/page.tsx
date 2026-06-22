@@ -24,7 +24,7 @@ export default async function SeasonPage({ params }: { params: Promise<{ kind: s
   if (supabase && seasonId) {
     const [{ data: episodes }, { data: reviewRows }, { data: ratingRows }] = await Promise.all([
       supabase.from("episodes").select("id,tmdb_id").eq("season_id", seasonId),
-      supabase.from("reviews").select("id,title,body,contains_spoilers,created_at,rating_id,profiles(username,display_name),ratings(score)").eq("season_id", seasonId).order("created_at", { ascending: false }).limit(20),
+      supabase.from("reviews").select("id,title,body,contains_spoilers,created_at,rating_id,profiles(username,display_name,avatar_url),ratings(score)").eq("season_id", seasonId).order("created_at", { ascending: false }).limit(20),
       supabase.from("ratings").select("score,user_id").eq("season_id", seasonId)
     ]);
     episodeMap = new Map((episodes ?? []).map(episode => [episode.tmdb_id, episode.id])); reviews = reviewRows ?? [];

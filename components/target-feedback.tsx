@@ -4,7 +4,7 @@ import { ReviewComposer } from "@/components/review-composer";
 import { ReviewCard } from "@/components/review-card";
 import type { ExternalRating } from "@/lib/external-ratings";
 
-type Review = { id: string; title: string | null; body: string; contains_spoilers: boolean; created_at: string; profiles?: { username?: string; display_name?: string | null } | null; ratings?: { score?: number | string } | { score?: number | string }[] | null };
+type Review = { id: string; title: string | null; body: string; contains_spoilers: boolean; created_at: string; profiles?: { username?: string; display_name?: string | null; avatar_url?: string | null } | null; ratings?: { score?: number | string } | { score?: number | string }[] | null };
 type Props = { targetType: "season" | "episode"; targetId: number; path: string; signedIn: boolean; rating?: number | null; userRating?: number | null; reviews: Review[]; sources?: ExternalRating[] };
 
 export function TargetRatingBar({ targetType, targetId, path, signedIn, rating, userRating, sources = [] }: Omit<Props, "reviews">) {
