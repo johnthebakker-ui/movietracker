@@ -12,6 +12,7 @@ import { WatchLogForm } from "@/components/watch-log-form";
 import { TitleRatingPicker } from "@/components/title-rating-picker";
 import { ReviewComposer } from "@/components/review-composer";
 import { ReviewCard } from "@/components/review-card";
+import { RecommendationInterestButton } from "@/components/recommendation-interest-button";
 import { ensureMedia } from "@/lib/catalog";
 import { getExternalRatings } from "@/lib/external-ratings";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -38,7 +39,7 @@ export default async function TitlePage({ params }: Props) {
   const supabase = await createSupabaseServerClient();
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
   const externalRatings = await getExternalRatings((item.raw as any).external_ids?.imdb_id);
-  let state: any = null, rating: any = null, favorite = false, lists: any[] = [], watched = false, reviews: any[] = [], communityScore: number | null = null;
+  let state: any = null, rating: any = null, favorite = false, lists: any[] = [], watched = false, notInterested = false, reviews: any[] = [], communityScore: number | null = null; const dismissedRecommendationKeys = new Set<string>();
   if (supabase && mediaId) {
     const reviewQuery = supabase.from("reviews").select("id,title,body,contains_spoilers,created_at,user_id,rating_id,profiles(username,display_name,avatar_url),ratings(score)").eq("media_id", mediaId).order("created_at", { ascending: false }).limit(20);
     const calls: any[] = [reviewQuery, supabase.from("ratings").select("score").eq("media_id", mediaId)];
@@ -47,13 +48,14 @@ export default async function TitlePage({ params }: Props) {
       supabase.from("ratings").select("score").eq("user_id", user.id).eq("media_id", mediaId).maybeSingle(),
       supabase.from("favorites").select("media_id").eq("user_id", user.id).eq("media_id", mediaId).maybeSingle(),
       supabase.from("lists").select("id,name").eq("user_id", user.id).order("updated_at", { ascending: false }),
-      supabase.from("watch_events").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("media_id", mediaId).is("episode_id", null)
+      supabase.from("watch_events").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("media_id", mediaId).is("episode_id", null),
+      supabase.from("recommendation_dismissals").select("media_id,media(tmdb_id,kind)").eq("user_id", user.id)
     );
     const results = await Promise.all(calls);
     reviews = results[0].data ?? []; const communityRatings = results[1].data ?? []; communityScore = communityRatings.length ? communityRatings.reduce((sum: number, row: any) => sum + Number(row.score), 0) / communityRatings.length : null;
-    if (user) { state = results[2].data; rating = results[3].data; favorite = Boolean(results[4].data); lists = results[5].data ?? []; watched = Boolean(results[6].count); }
+    if (user) { state = results[2].data; rating = results[3].data; favorite = Boolean(results[4].data); lists = results[5].data ?? []; watched = Boolean(results[6].count); const dismissalRows = results[7].data ?? []; notInterested = dismissalRows.some((row: any) => row.media_id === mediaId); dismissalRows.forEach((row: any) => { const dismissedMedia = Array.isArray(row.media) ? row.media[0] : row.media; if (dismissedMedia) dismissedRecommendationKeys.add(`${dismissedMedia.kind}-${dismissedMedia.tmdb_id}`); }); }
   }
-  const ratedRecommendations = await withCommunityRatings(item.recommendations, supabase);
+  const ratedRecommendations = await withCommunityRatings(item.recommendations.filter(recommendation => !dismissedRecommendationKeys.has(`${recommendation.kind}-${recommendation.id}`)), supabase);
   const path = `/title/${kind}/${item.id}`;
   const backdrop = imageUrl(item.backdropPath, "original");
   const poster = imageUrl(item.posterPath, "w500");
@@ -80,6 +82,7 @@ export default async function TitlePage({ params }: Props) {
         <TitleRatingPicker mediaId={mediaId} path={path} rating={rating?.score} signedIn={Boolean(user)} />
         {mediaId && user && <div className="title-quick-actions">
         <form action={toggleFavorite}><input type="hidden" name="mediaId" value={mediaId}/><input type="hidden" name="path" value={path}/><button className="button ghost"><Heart size={16} fill={favorite ? "currentColor" : "none"}/>{favorite ? "Favorited" : "Favorite"}</button></form>
+        <RecommendationInterestButton kind={kind} tmdbId={item.id} initialDismissed={notInterested} />
         {kind === "movie" ? <WatchLogForm mediaId={mediaId} releaseDate={item.releaseDate} path={path} watched={watched} /> : <BulkWatchLogForm mediaId={mediaId} tmdbId={item.id} path={path} label="Mark entire series watched" scope="show" />}
         {lists.length > 0 && <AddToListForm mediaId={mediaId} path={path} lists={lists} />}
         </div>}

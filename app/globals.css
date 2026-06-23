@@ -175,7 +175,13 @@ img { max-width: 100%; }
 .filter-checkbox { min-height: 44px; padding: 0 14px; display: flex; align-items: center; gap: 8px; border-radius: 11px; background: var(--surface-2); font-size: .82rem; font-weight: 700; }
 .recommendation-card { min-width: 0; max-width: 100%; overflow: hidden; }
 .recommendation-card .media-card { width: 100%; }
-.recommendation-card p { margin: 9px 2px 0; color: var(--muted); font-size: .68rem; line-height: 1.45; overflow-wrap: anywhere; }
+.recommendation-card-note { padding: 9px 2px 0; }
+.recommendation-card p { min-height: 2.9em; margin: 0; color: var(--muted); font-size: .68rem; line-height: 1.45; overflow-wrap: anywhere; }
+.recommendation-interest { display: grid; gap: 4px; }
+.recommendation-interest small { color: #ff9f9f; font-size: .61rem; line-height: 1.35; }
+.recommendation-dismiss { margin-top: 7px; padding: 0; border: 0; color: var(--muted); background: transparent; display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: .64rem; cursor: pointer; }
+.recommendation-dismiss:hover { color: var(--text); }
+.recommendation-dismiss:disabled { cursor: wait; opacity: .58; }
 .entity-hero { display: grid; grid-template-columns: 280px minmax(0, 760px); gap: 42px; align-items: end; margin-bottom: 60px; }
 .entity-portrait { width: 100%; aspect-ratio: 2 / 3; border-radius: 20px; object-fit: cover; background: var(--surface-2); box-shadow: var(--shadow); }
 .entity-meta { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .78rem; }
@@ -229,7 +235,7 @@ img { max-width: 100%; }
 .status-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .status-actions .select { width: auto; min-width: 180px; }
 .title-quick-actions { grid-column: 1 / -1; min-height: 58px; padding: 8px 0; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: center; gap: 2px 0; }
-.title-quick-actions > form, .title-quick-actions > details, .title-quick-actions > .add-list-form { padding: 0 11px; border-right: 1px solid var(--line); }
+.title-quick-actions > form, .title-quick-actions > details, .title-quick-actions > .add-list-form, .title-quick-actions > .recommendation-interest { padding: 0 11px; border-right: 1px solid var(--line); }
 .title-quick-actions > form:first-child { padding-left: 0; }
 .title-quick-actions > :last-child { border-right: 0; }
 .title-quick-actions .button.ghost { min-height: 38px; padding: 0 9px; border: 0; border-radius: 8px; color: var(--muted); background: transparent; font-size: .75rem; }
@@ -752,7 +758,7 @@ img { max-width: 100%; }
   .status-actions button.active::after { left: 5px; right: 5px; bottom: -17px; }
   .rating-popover { width: min(310px,calc(100vw - 28px)); }
   .title-quick-actions { align-items: stretch; }
-  .title-quick-actions > form, .title-quick-actions > details, .title-quick-actions > .add-list-form { padding: 4px 6px; border-right: 0; }
+  .title-quick-actions > form, .title-quick-actions > details, .title-quick-actions > .add-list-form, .title-quick-actions > .recommendation-interest { padding: 4px 6px; border-right: 0; }
   .title-quick-actions > form:first-child { padding-left: 0; }
   .title-quick-actions .add-list-form { width: 100%; }
   .title-quick-actions .add-list-form label { flex: 1; }

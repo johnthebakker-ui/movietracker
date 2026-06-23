@@ -37,13 +37,14 @@ export async function ensureRecommendations(userId: string, force = false) {
 }
 
 export async function recommendationPage(supabase: any, userId: string, filters: RecommendationFilters, offset = 0, size = 24): Promise<RecommendationPage> {
-  const [recommendations, watches, completed, lists] = await Promise.all([
+  const [recommendations, watches, completed, lists, dismissals] = await Promise.all([
     supabase.from("recommendations").select("score,reasons,media(*)").eq("user_id", userId).is("dismissed_at", null).order("score", { ascending: false }).limit(1000),
     filters.hideWatched ? supabase.from("watch_events").select("media_id").eq("user_id", userId) : Promise.resolve({ data: [] }),
     filters.hideWatched ? supabase.from("progress").select("media_id").eq("user_id", userId).eq("status", "completed") : Promise.resolve({ data: [] }),
-    filters.hideListed ? supabase.from("lists").select("id").eq("user_id", userId) : Promise.resolve({ data: [] })
+    filters.hideListed ? supabase.from("lists").select("id").eq("user_id", userId) : Promise.resolve({ data: [] }),
+    supabase.from("recommendation_dismissals").select("media_id").eq("user_id", userId)
   ]);
-  const watched = new Set([...(watches.data ?? []), ...(completed.data ?? [])].map((row: any) => row.media_id)); const listIds = (lists.data ?? []).map((row: any) => row.id); const listedRows = filters.hideListed && listIds.length ? (await supabase.from("list_items").select("media_id").in("list_id", listIds)).data ?? [] : []; const listed = new Set(listedRows.map((row: any) => row.media_id));
-  const filtered = (recommendations.data ?? []).map((row: any) => ({ ...row, media: Array.isArray(row.media) ? row.media[0] : row.media })).filter((row: any) => row.media && (!filters.kind || row.media.kind === filters.kind) && (!filters.year || row.media.release_date?.startsWith(filters.year)) && (!filters.genre || (row.media.genres ?? []).some((genre: any) => String(genre.id) === filters.genre)) && (!filters.hideWatched || !watched.has(row.media.id)) && (!filters.hideListed || !listed.has(row.media.id)));
+  const watched = new Set([...(watches.data ?? []), ...(completed.data ?? [])].map((row: any) => row.media_id)); const dismissed = new Set((dismissals.data ?? []).map((row: any) => row.media_id)); const listIds = (lists.data ?? []).map((row: any) => row.id); const listedRows = filters.hideListed && listIds.length ? (await supabase.from("list_items").select("media_id").in("list_id", listIds)).data ?? [] : []; const listed = new Set(listedRows.map((row: any) => row.media_id));
+  const filtered = (recommendations.data ?? []).map((row: any) => ({ ...row, media: Array.isArray(row.media) ? row.media[0] : row.media })).filter((row: any) => row.media && !dismissed.has(row.media.id) && (!filters.kind || row.media.kind === filters.kind) && (!filters.year || row.media.release_date?.startsWith(filters.year)) && (!filters.genre || (row.media.genres ?? []).some((genre: any) => String(genre.id) === filters.genre)) && (!filters.hideWatched || !watched.has(row.media.id)) && (!filters.hideListed || !listed.has(row.media.id)));
   const page = filtered.slice(offset, offset + size).map((row: any) => ({ item: fromDbMedia(row.media), reason: row.reasons?.[0] ?? "Chosen for your taste" })); return { items: page, nextCursor: offset + size < filtered.length ? String(offset + size) : null, total: filtered.length };
 }
