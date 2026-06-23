@@ -111,9 +111,11 @@ img { max-width: 100%; }
 .filter-popover summary small { display: block; color: var(--muted); font-size: .65rem; font-weight: 700; margin-bottom: 3px; }
 .filter-popover summary strong { display: block; font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .filter-menu { position: absolute; z-index: 30; left: 0; top: calc(100% + 7px); width: max(230px, 100%); max-height: 310px; overflow-y: auto; padding: 7px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); }
+.filter-sheet-heading { display: none; }
 .filter-option { cursor: pointer; display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 10px 11px; border-radius: 9px; font-size: .82rem; }
 .filter-option:hover { background: var(--surface-2); }
 .filter-option input { position: absolute; opacity: 0; pointer-events: none; }
+.filter-option-check { width: 18px; height: 18px; display: grid; place-items: center; }
 .date-filter-row, .year-filter-row { display: flex; align-items: center; gap: 10px; padding: 12px 9px 4px; margin-top: 8px; border-top: 1px solid var(--line); }
 .year-filter-heading, .year-fields { display: flex; align-items: center; gap: 10px; }
 .year-mode { display: inline-flex; gap: 4px; padding: 4px; border-radius: 10px; background: var(--surface-2); }
@@ -754,7 +756,12 @@ img { max-width: 100%; }
   .filter-summary-icon { width: 30px; height: 30px; border-radius: 9px; }
   .filter-popover summary small { font-size: .56rem; }
   .filter-popover summary strong { font-size: .72rem; }
-  .filter-menu { position: fixed; z-index: 130; left: 14px; right: 14px; top: auto; bottom: 86px; width: auto; max-height: min(420px,58vh); border-radius: 18px; }
+  .filter-menu { position: fixed; z-index: 130; left: 10px; right: 10px; top: auto; bottom: 80px; width: auto; max-height: min(430px,58vh); padding: 7px 8px 10px; border-radius: 18px; }
+  .filter-sheet-heading { position: sticky; z-index: 2; top: -7px; margin: -7px -8px 3px; padding: 8px 14px 9px; background: var(--surface); display: grid; justify-items: center; gap: 7px; border-radius: 18px 18px 0 0; }
+  .filter-sheet-heading > span { width: 34px; height: 4px; border-radius: 999px; background: color-mix(in srgb,var(--muted) 45%,transparent); }
+  .filter-sheet-heading strong { width: 100%; color: var(--muted); font-size: .63rem; letter-spacing: .08em; text-transform: uppercase; }
+  .filter-option { min-height: 46px; padding: 10px 14px; grid-template-columns: minmax(0,1fr) 22px; border-radius: 11px; font-size: .82rem; }
+  .filter-option.selected { color: var(--text); background: var(--surface-2); }
   .year-filter-row { padding: 10px 5px 2px; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 9px; }
   .year-filter-heading { min-width: 0; }
   .year-mode { justify-self: end; }
