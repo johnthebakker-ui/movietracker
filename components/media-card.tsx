@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import Image from "@/components/app-image";
 import Link from "next/link";
 import { Check, ExternalLink, Heart, ListPlus, MoreVertical, Search, Trash2, X } from "lucide-react";
 import { createPortal } from "react-dom";

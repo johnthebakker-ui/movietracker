@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/components/app-image";
 import Link from "next/link";
 import { CalendarDays, CheckCircle2, Film, Flame, Gauge, History, List, MapPin, PauseCircle, Settings, XCircle } from "lucide-react";
 import { notFound } from "next/navigation";

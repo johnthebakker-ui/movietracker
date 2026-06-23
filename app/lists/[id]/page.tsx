@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/components/app-image";
 import { List } from "lucide-react";
 import { notFound } from "next/navigation";
 import { EditListDialog } from "@/components/edit-list-dialog";

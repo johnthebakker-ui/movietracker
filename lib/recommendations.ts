@@ -31,8 +31,18 @@ export async function ensureRecommendations(userId: string, force = false) {
   for (const result of pools) { if (result.status !== "fulfilled") continue; const affinity = affinities.get(result.value.genreId) ?? 1; result.value.data.items.forEach((item, index) => { const key = `${item.kind}-${item.id}`; const score = affinity * .22 + item.voteAverage * .45 + Math.max(0, 20 - index) / 10; const existing = candidates.get(key); if (!existing || score > existing.score) candidates.set(key, { item, score, reason: "Because this fits genres you watch often" }); }); }
   if (!candidates.size) (await getTrending()).forEach((item, index) => candidates.set(`${item.kind}-${item.id}`, { item, score: 20 - index, reason: "Trending while MovieTracker learns your taste" }));
   const ranked = [...candidates.values()].filter(entry => !seedKeys.has(`${entry.item.kind}-${entry.item.id}`)).sort((a, b) => b.score - a.score);
-  const mediaRows = await ensureMediaSummaries(ranked.map(entry => entry.item)); const ids = new Map(mediaRows.map(row => [`${row.kind}-${row.tmdb_id}`, row.id])); const now = new Date().toISOString();
-  const records = ranked.map(entry => ({ user_id: userId, media_id: ids.get(`${entry.item.kind}-${entry.item.id}`), score: entry.score + (force ? Math.random() * 2.5 : 0), reasons: [entry.reason], generated_at: now })).filter(row => row.media_id);
+  const displayRanked = [...ranked];
+  if (force) {
+    const rotationSize = Math.min(72, displayRanked.length);
+    const rotation = displayRanked.slice(0, rotationSize);
+    for (let index = rotation.length - 1; index > 0; index -= 1) {
+      const swapWith = Math.floor(Math.random() * (index + 1));
+      [rotation[index], rotation[swapWith]] = [rotation[swapWith], rotation[index]];
+    }
+    displayRanked.splice(0, rotationSize, ...rotation);
+  }
+  const mediaRows = await ensureMediaSummaries(displayRanked.map(entry => entry.item)); const ids = new Map(mediaRows.map(row => [`${row.kind}-${row.tmdb_id}`, row.id])); const now = new Date().toISOString();
+  const records = displayRanked.map((entry, index) => ({ user_id: userId, media_id: ids.get(`${entry.item.kind}-${entry.item.id}`), score: force ? displayRanked.length - index : entry.score, reasons: [entry.reason], generated_at: now })).filter(row => row.media_id);
   if (records.length) { await admin.from("recommendations").delete().eq("user_id", userId); for (let index = 0; index < records.length; index += 500) { const { error } = await admin.from("recommendations").insert(records.slice(index, index + 500)); if (error) throw error; } }
 }
 

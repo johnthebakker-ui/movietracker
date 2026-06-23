@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/components/app-image";
 import Link from "next/link";
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Film, Tv } from "lucide-react";
 import { redirect } from "next/navigation";

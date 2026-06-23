@@ -101,7 +101,7 @@ img { max-width: 100%; }
 
 .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin: 24px 0 34px; padding: 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); }
 .discovery-filter-card { position: relative; z-index: 10; margin: 28px 0 36px; padding: 12px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: 0 12px 44px rgba(0,0,0,.12); }
-.discovery-heading .button { border-radius: 14px; }
+.discovery-heading .button, .library-heading .button { border-radius: 14px; }
 .discovery-filter-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .filter-popover { position: relative; min-width: 0; }
 .filter-popover summary { list-style: none; cursor: pointer; min-height: 64px; padding: 10px 13px; border: 1px solid transparent; border-radius: 13px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; transition: background .18s, border-color .18s; }
@@ -746,7 +746,7 @@ img { max-width: 100%; }
   .date-filter-row { flex-wrap: wrap; }
   .date-filter-row .button { width: 100%; margin-left: 0; }
   .discovery-heading { margin-bottom: 12px; }
-  .discovery-heading .button { min-height: 42px; padding: 0 15px; border-radius: 12px; font-size: .72rem; }
+  .discovery-heading .button, .library-heading .button { min-height: 42px; padding: 0 15px; border-radius: 12px; font-size: .72rem; }
   .discovery-filter-card { margin: 14px 0 26px; padding: 8px; border-radius: 17px; }
   .filter-popover summary { min-height: 52px; padding: 7px 8px; gap: 8px; }
   .filter-summary-icon { width: 30px; height: 30px; border-radius: 9px; }

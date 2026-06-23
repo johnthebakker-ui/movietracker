@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/components/app-image";
 import { MessageSquareText } from "lucide-react";
 
 type Profile = { username?: string; display_name?: string | null; avatar_url?: string | null };

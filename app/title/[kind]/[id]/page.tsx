@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import Image from "@/components/app-image";
 import Link from "next/link";
 import { BookmarkPlus, Check, CirclePause, CircleX, Eye, Heart, Play } from "lucide-react";
 import { notFound } from "next/navigation";

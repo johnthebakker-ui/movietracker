@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import Image from "@/components/app-image";
 import { Bell, CalendarDays, Clapperboard, Compass, Home, Library, Search, UserRound } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getServerAuth } from "@/lib/auth-server";

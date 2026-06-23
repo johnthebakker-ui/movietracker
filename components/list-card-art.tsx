@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/components/app-image";
 import { List } from "lucide-react";
 
 export function ListCardArt({ customCover, featuredArt, posters, compact = false }: { customCover?: string | null; featuredArt?: string | null; posters: string[]; compact?: boolean }) {

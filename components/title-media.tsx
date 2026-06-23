@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import Image from "@/components/app-image";
 import { ChevronLeft, ChevronRight, ExternalLink, Eye, Play, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { imageUrl } from "@/lib/tmdb";

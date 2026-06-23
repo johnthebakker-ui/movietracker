@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/components/app-image";
 import { Building2, MapPin } from "lucide-react";
 import { notFound } from "next/navigation";
 import { InfiniteMediaGrid } from "@/components/infinite-media-grid";
