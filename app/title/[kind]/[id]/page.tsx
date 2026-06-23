@@ -56,8 +56,9 @@ export default async function TitlePage({ params }: Props) {
     if (user) { state = results[2].data; rating = results[3].data; favorite = Boolean(results[4].data); lists = results[5].data ?? []; watched = Boolean(results[6].count); const dismissalRows = results[7].data ?? []; notInterested = dismissalRows.some((row: any) => row.media_id === mediaId); dismissalRows.forEach((row: any) => { const dismissedMedia = Array.isArray(row.media) ? row.media[0] : row.media; if (dismissedMedia) dismissedRecommendationKeys.add(`${dismissedMedia.kind}-${dismissedMedia.tmdb_id}`); }); }
   }
   const collectionItems = kind === "movie" && item.collectionTmdbId ? (await getCollection(item.collectionTmdbId)).filter(part => part.id !== item.id && !dismissedRecommendationKeys.has(`movie-${part.id}`)) : [];
+  const collectionMovieIds = new Set(collectionItems.map(part => part.id));
   const [ratedRecommendations, ratedCollection] = await Promise.all([
-    withCommunityRatings(item.recommendations.filter(recommendation => !dismissedRecommendationKeys.has(`${recommendation.kind}-${recommendation.id}`)), supabase),
+    withCommunityRatings(item.recommendations.filter(recommendation => !dismissedRecommendationKeys.has(`${recommendation.kind}-${recommendation.id}`) && !(recommendation.kind === "movie" && collectionMovieIds.has(recommendation.id))), supabase),
     withCommunityRatings(collectionItems, supabase)
   ]);
   const path = `/title/${kind}/${item.id}`;
