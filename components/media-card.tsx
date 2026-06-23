@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Check, ExternalLink, Heart, ListPlus, MoreVertical, Search, Trash2 } from "lucide-react";
+import { Check, ExternalLink, Heart, ListPlus, MoreVertical, Search, Trash2, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { addCatalogTitleToList, quickTrack, removeCatalogTitleFromList, removeFromList, type ListActionState } from "@/app/actions/library";
@@ -34,21 +34,26 @@ export function MediaCard({ item, listContext, progressLabel }: { item: MediaSum
   const stopHold = () => { if (holdTimer.current) clearTimeout(holdTimer.current); };
   useEffect(() => { const closeOther = (event: Event) => { if ((event as CustomEvent<string>).detail !== menuId) setMenu(false); }; window.addEventListener(menuEvent, closeOther); return () => window.removeEventListener(menuEvent, closeOther); }, [menuId]);
   useEffect(() => { if (!menu) return; const closeOutside = (event: PointerEvent) => { if (!menuRef.current?.contains(event.target as Node) && !cardRef.current?.contains(event.target as Node)) setMenu(false); }; const esc = (event: KeyboardEvent) => { if (event.key === "Escape") setMenu(false); }; document.addEventListener("pointerdown", closeOutside); document.addEventListener("keydown", esc); window.addEventListener("resize", place); return () => { document.removeEventListener("pointerdown", closeOutside); document.removeEventListener("keydown", esc); window.removeEventListener("resize", place); }; }, [menu]);
+  useEffect(() => { if (!menu || window.innerWidth > 720) return; const previous = document.body.style.overflow; document.body.style.overflow = "hidden"; return () => { document.body.style.overflow = previous; }; }, [menu]);
   useEffect(() => { if (!menu || lists !== null || listError) return; let active = true; fetch(`/api/lists/mine?kind=${item.kind}&tmdbId=${item.id}`).then(async response => { const result = await response.json(); if (!response.ok) throw new Error(result.error ?? "Could not load your lists"); if (active) { setLists(result.lists ?? []); setQuickState(result.state); } }).catch(error => { if (active) setListError(error instanceof Error ? error.message : "Could not load your lists"); }); return () => { active = false; }; }, [menu, lists, listError, item.id, item.kind]);
   const hidden = <><input type="hidden" name="tmdbId" value={item.id} /><input type="hidden" name="kind" value={item.kind} /></>;
   const filtered = (lists ?? []).filter(list => list.name.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
-  const popup = menu && typeof document !== "undefined" ? createPortal(<div className="media-context-menu" role="menu" ref={menuRef} style={{ top: position.top, left: position.left, maxHeight: position.maxHeight }}>
-    <div className="context-menu-heading"><strong>{item.title}</strong><small>Quick actions</small></div>
-    <Link href={`/title/${item.kind}/${item.id}`}><ExternalLink size={15} /> Open details</Link>
-    <form action={quickAction} className="quick-action-form">{hidden}
-      <button name="intent" value="planned" disabled={pending || quickState.progressStatus === "planned"}><ListPlus size={15} /> {quickState.progressStatus === "planned" ? "In watchlist" : "Add to watchlist"}</button>
-      <button name="intent" value="completed" disabled={pending || quickState.watched}><Check size={15} /> {quickState.watched ? "Watched" : "Mark watched"}</button>
-      <button name="intent" value="favorite" disabled={pending || quickState.favorite}><Heart size={15} /> {quickState.favorite ? "Favorited" : "Add to favorites"}</button>
-    </form>
+  const popup = menu && typeof document !== "undefined" ? createPortal(<><button className="context-scrim" type="button" aria-label="Close actions" onClick={() => setMenu(false)} /><div className="media-context-menu" role="menu" ref={menuRef} style={{ top: position.top, left: position.left, maxHeight: position.maxHeight }}>
+    <div className="context-sheet-handle" aria-hidden="true" />
+    <button className="context-sheet-close" type="button" onClick={() => setMenu(false)} aria-label="Close actions"><X size={18} /></button>
+    <div className="context-menu-heading"><div className="context-menu-thumb">{poster ? <Image src={poster} alt="" fill sizes="48px" /> : <span>{item.title.slice(0, 1)}</span>}</div><div><strong>{item.title}</strong><small>{item.kind === "show" ? "Series" : "Movie"} actions</small></div></div>
+    <div className="context-primary-actions">
+      <Link href={`/title/${item.kind}/${item.id}`}><ExternalLink size={18} /> <span>Details</span></Link>
+      <form action={quickAction} className="quick-action-form">{hidden}
+        <button name="intent" value="planned" disabled={pending || quickState.progressStatus === "planned"}><ListPlus size={18} /> <span>{quickState.progressStatus === "planned" ? "In watchlist" : "Watchlist"}</span></button>
+        <button name="intent" value="completed" disabled={pending || quickState.watched}><Check size={18} /> <span>{quickState.watched ? "Watched" : "Watched"}</span></button>
+        <button name="intent" value="favorite" disabled={pending || quickState.favorite}><Heart size={18} /> <span>{quickState.favorite ? "Favorited" : "Favorite"}</span></button>
+      </form>
+    </div>
     <div className="context-list-section"><span>Custom lists</span>{lists === null && !listError ? <small>Loading your lists…</small> : listError ? <Link href={listError.startsWith("Sign in") ? "/login" : "/lists"}>{listError}</Link> : lists?.length ? <><label className="context-list-search"><Search size={14} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Find a list" aria-label="Find a list" /></label><div className="context-list-options">{filtered.map(list => list.contains ? <form action={listRemoveAction} key={list.id} onSubmit={event => { if (!window.confirm(`Remove ${item.title} from ${list.name}?`)) event.preventDefault(); }}>{hidden}<input type="hidden" name="listId" value={list.id} /><button disabled={removingFromChosenList} className="contained" title={`Remove from ${list.name}`}><span className="context-list-name">{list.name}</span><span className="context-list-action"><Check size={14} /> Added</span></button></form> : <form action={addAction} key={list.id}>{hidden}<input type="hidden" name="listId" value={list.id} /><button disabled={adding}><span className="context-list-name">{list.name}</span><span className="context-list-action"><ListPlus size={14} /> Add</span></button></form>)}</div></> : <Link href="/lists">Create your first list</Link>}</div>
     {listContext && <div className="context-remove-section"><span>Current list</span><form action={removeAction} onSubmit={event => { if (!window.confirm(`Remove ${item.title} from ${listContext.name}?`)) event.preventDefault(); }}><input type="hidden" name="listId" value={listContext.id} /><input type="hidden" name="mediaId" value={listContext.mediaId} /><input type="hidden" name="path" value={`/lists/${listContext.id}`} /><button className="danger-action" disabled={removing}><Trash2 size={15} /> {removing ? "Removing…" : `Remove from ${listContext.name}`}</button></form></div>}
     {[state, addState, listRemoveState, removeState].map((result, index) => result.status !== "idle" && <span className={`quick-action-result ${result.status}`} role="status" key={index}>{result.status === "success" ? "✓" : "!"} {result.message}</span>)}
-  </div>, document.body) : null;
+  </div></>, document.body) : null;
   return <article ref={cardRef} className="media-card interactive-card" onContextMenu={event => { event.preventDefault(); openMenu(); }} onClickCapture={event => { if (held.current) { event.preventDefault(); event.stopPropagation(); held.current = false; } }} onPointerDown={event => { if (event.pointerType === "touch") startHold(); }} onPointerUp={stopHold} onPointerCancel={stopHold} onPointerLeave={stopHold}>
     <Link href={`/title/${item.kind}/${item.id}`}><div className="poster-wrap">{poster ? <Image className="poster" src={poster} alt={`${item.title} poster`} fill sizes="(max-width: 720px) 50vw, 17vw" /> : <div className="poster-fallback">{item.title}</div>}{item.communityRating != null && <span className="card-badge" title={`${item.communityRatingCount ?? 0} MovieTracker ratings`}>{item.communityRating.toFixed(1)}<small>/10</small></span>}</div><div className="card-title truncate">{item.title}</div><div className="card-meta"><span>{yearOf(item.releaseDate)}</span><span>{item.kind === "show" ? "Series" : "Film"}</span></div>{progressLabel && <div className="card-progress">{progressLabel}</div>}</Link>
     <button className="card-menu-trigger" type="button" onClick={event => { event.preventDefault(); openMenu(); }} aria-label={`Actions for ${item.title}`} aria-haspopup="menu"><MoreVertical size={16} /></button>{popup}
