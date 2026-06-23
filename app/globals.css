@@ -114,6 +114,7 @@ img { max-width: 100%; }
 .filter-option:hover { background: var(--surface-2); }
 .filter-option input { position: absolute; opacity: 0; pointer-events: none; }
 .date-filter-row, .year-filter-row { display: flex; align-items: center; gap: 10px; padding: 12px 9px 4px; margin-top: 8px; border-top: 1px solid var(--line); }
+.year-filter-heading, .year-fields { display: flex; align-items: center; gap: 10px; }
 .year-mode { display: inline-flex; gap: 4px; padding: 4px; border-radius: 10px; background: var(--surface-2); }
 .year-mode label { cursor: pointer; padding: 7px 9px; border-radius: 8px; font-size: .68rem; font-weight: 750; }
 .year-mode label:has(input:checked) { color: #fff; background: var(--accent); }
@@ -122,6 +123,7 @@ img { max-width: 100%; }
 .year-filter-row .button { margin-left: auto; }
 .infinite-sentinel { min-height: 100px; padding: 36px; display: grid; place-items: center; color: var(--muted); font-size: .75rem; }
 .interactive-card { position: relative; }
+.interactive-card, .interactive-card * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .context-scrim { position: fixed; z-index: 89; inset: 0; border: 0; background: transparent; }
 .media-context-menu { position: fixed; z-index: 120; width: min(310px,calc(100vw - 24px)); padding: 9px; border: 1px solid var(--line); border-radius: 14px; color: var(--text); background: color-mix(in srgb,var(--surface) 96%,transparent); box-shadow: 0 24px 70px rgba(0,0,0,.5); backdrop-filter: blur(18px); overflow: hidden; }
 .media-context-menu > strong, .media-context-menu > small { display: block; padding: 3px 8px; }
@@ -685,13 +687,29 @@ img { max-width: 100%; }
   .section { padding-top: 42px; }
   .media-grid { grid-template-columns: repeat(2, 1fr); gap: 18px 11px; }
   .card-menu-trigger { opacity: 1; }
-  .list-sort-bar { align-items: stretch; flex-direction: column; }
-  .list-sort-bar > label:first-child, .list-sort-bar .button { width: 100%; }
+  .list-sort-bar { margin-top: 14px; padding: 10px; border: 1px solid var(--line); border-radius: 16px; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 8px; }
+  .list-sort-bar > label:first-child { width: 100%; grid-column: 1 / -1; }
+  .list-sort-bar .filter-checkbox { min-height: 42px; padding-inline: 11px; font-size: .7rem; }
+  .list-sort-bar .button { width: auto; min-height: 42px; padding-inline: 20px; border-radius: 11px; }
   .discovery-filter-grid { grid-template-columns: 1fr 1fr; }
   .date-filter-row { flex-wrap: wrap; }
   .date-filter-row .button { width: 100%; margin-left: 0; }
-  .year-filter-row { flex-wrap: wrap; }
-  .year-filter-row .button { width: 100%; margin-left: 0; }
+  .discovery-heading { margin-bottom: 12px; }
+  .discovery-heading .button { min-height: 42px; padding: 0 15px; border-radius: 12px; font-size: .72rem; }
+  .discovery-filter-card { margin: 14px 0 26px; padding: 8px; border-radius: 17px; }
+  .filter-popover summary { min-height: 52px; padding: 7px 8px; gap: 8px; }
+  .filter-summary-icon { width: 30px; height: 30px; border-radius: 9px; }
+  .filter-popover summary small { font-size: .56rem; }
+  .filter-popover summary strong { font-size: .72rem; }
+  .filter-menu { position: fixed; z-index: 130; left: 14px; right: 14px; top: auto; bottom: 86px; width: auto; max-height: min(420px,58vh); border-radius: 18px; }
+  .year-filter-row { padding: 10px 5px 2px; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 9px; }
+  .year-filter-heading { min-width: 0; }
+  .year-mode { justify-self: end; }
+  .year-mode label { padding: 6px 8px; font-size: .61rem; }
+  .year-fields { width: 100%; grid-column: 1 / -1; }
+  .year-fields.range { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); }
+  .year-input { width: 100%; min-height: 43px; }
+  .year-filter-row .button { width: 100%; min-height: 44px; margin-left: 0; grid-column: 1 / -1; border-radius: 11px; }
   .detail-hero { min-height: 680px; margin-top: -24px; }
   .detail-hero::before { background: linear-gradient(0deg, rgba(5,6,7,.99) 0%, rgba(5,6,7,.68) 68%, rgba(5,6,7,.15)); }
   .detail-layout { grid-template-columns: 1fr; gap: 18px; padding: 190px 0 56px; }
@@ -733,9 +751,13 @@ img { max-width: 100%; }
   .settings-layout { grid-template-columns: 1fr; }
   .settings-nav { display: flex; overflow-x: auto; }
   .form-grid, .stat-grid { grid-template-columns: 1fr 1fr; }
-  .recommendation-filter { width: 100%; max-width: 100%; grid-template-columns: minmax(0,1fr) minmax(0,1fr); overflow: hidden; }
+  .recommendation-intro { margin-top: 16px; font-size: .84rem; line-height: 1.55; }
+  .recommendation-filter { width: 100%; max-width: 100%; margin: 18px 0 26px; padding: 8px; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 8px; border-radius: 17px; overflow: hidden; }
   .recommendation-filter > * { min-width: 0; }
-  .recommendation-filter > .button { grid-column: 1 / -1; }
+  .recommendation-filter > .select, .recommendation-filter > .input { min-height: 46px; padding: 10px 11px; border-radius: 11px; font-size: .72rem; }
+  .recommendation-filter > .input { grid-column: 1 / -1; }
+  .recommendation-filter .filter-checkbox { min-height: 44px; padding: 0 10px; border-radius: 11px; font-size: .67rem; }
+  .recommendation-filter > .button { min-height: 44px; grid-column: 1 / -1; border-radius: 11px; }
   .entity-hero, .company-hero { grid-template-columns: 1fr; }
   .entity-portrait { width: 150px; }
   .company-logo { min-height: 130px; }
@@ -795,9 +817,13 @@ img { max-width: 100%; }
   .genre-stat-row > strong { font-size: .72rem; }
   .genre-stat-bar { grid-column: 1 / -1; grid-row: 2; }
   .profile-subhead > div > span { display: none; }
-  .list-detail-hero { min-height: 440px; padding: 28px 22px; align-items: flex-end; flex-direction: column; justify-content: flex-end; }
-  .list-detail-copy h1 { font-size: clamp(3rem, 15vw, 5rem); }
-  .list-detail-hero > .button { width: 100%; }
+  .list-detail-hero { min-height: 320px; padding: 22px 20px; border-radius: 18px; align-items: stretch; flex-direction: column; justify-content: flex-end; gap: 16px; }
+  .list-detail-hero::after { background: linear-gradient(0deg,rgba(7,8,9,.96),rgba(7,8,9,.34) 74%,rgba(7,8,9,.12)); }
+  .list-detail-copy .eyebrow { font-size: .55rem; line-height: 1.45; overflow-wrap: anywhere; }
+  .list-detail-copy h1 { margin: 7px 0 10px; font-size: clamp(3rem,14vw,4.25rem); }
+  .list-detail-copy p { margin: 0 0 12px; font-size: .78rem; line-height: 1.5; }
+  .list-detail-hero > .button { width: 100%; min-height: 44px; border-radius: 11px; }
+  .collection-groups .section { padding-top: 34px; }
   .list-upload-control { align-items: flex-start; flex-direction: column; }
   .list-upload-control input { margin-left: 0; max-width: 100%; }
   .footer-inner { display: grid; }

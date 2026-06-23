@@ -356,3 +356,23 @@ export async function addCatalogTitleToList(_previous: ListActionState, form: Fo
     return { status: "error", message: error instanceof Error ? error.message : "Could not add this title" };
   }
 }
+
+export async function removeCatalogTitleFromList(_previous: ListActionState, form: FormData): Promise<ListActionState> {
+  try {
+    const { supabase, user } = await userClient();
+    const values = z.object({ listId: z.string().uuid(), tmdbId: z.coerce.number().int().positive(), kind: z.enum(["movie", "show"]) }).parse(Object.fromEntries(form));
+    const [{ data: list }, { data: media }] = await Promise.all([
+      supabase.from("lists").select("id,name,featured_media_id").eq("id", values.listId).eq("user_id", user.id).single(),
+      supabase.from("media").select("id").eq("tmdb_id", values.tmdbId).eq("kind", values.kind).maybeSingle()
+    ]);
+    if (!list) throw new Error("You do not have permission to edit this list");
+    if (!media) return { status: "success", message: `Already removed from ${list.name}` };
+    const { error } = await supabase.from("list_items").delete().eq("list_id", list.id).eq("media_id", media.id); if (error) throw error;
+    if (Number(list.featured_media_id) === media.id) await supabase.from("lists").update({ featured_media_id: null, updated_at: new Date().toISOString() }).eq("id", list.id).eq("user_id", user.id);
+    const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single();
+    revalidatePath(`/lists/${list.id}`); revalidatePath("/lists"); if (profile?.username) revalidatePath(`/profile/${profile.username}`);
+    return { status: "success", message: `Removed from ${list.name}` };
+  } catch (error) {
+    return { status: "error", message: error instanceof Error ? error.message : "Could not remove this title" };
+  }
+}
