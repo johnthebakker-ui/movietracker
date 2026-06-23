@@ -1,8 +1,8 @@
 import Image from "@/components/app-image";
 import Link from "next/link";
-import { CalendarDays, Clock3, Film, History as HistoryIcon, RotateCcw, Trash2, Tv } from "lucide-react";
+import { CalendarDays, Clock3, Film, History as HistoryIcon, RotateCcw, Tv } from "lucide-react";
 import { redirect } from "next/navigation";
-import { deleteWatchEvent } from "@/app/actions/library";
+import { DeleteWatchEventForm } from "@/components/delete-watch-event-form";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { imageUrl } from "@/lib/tmdb";
 
@@ -38,7 +38,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
         return <div className="history-event" key={event.id}><Link className="history-event-link" href={`/title/${media?.kind}/${media?.tmdb_id}${episode ? `/season/${season?.season_number}/episode/${episode.episode_number}` : ""}`}>
           <div className="history-art">{artwork ? <Image src={artwork} alt="" fill sizes="140px" /> : <div />}</div>
           <div className="history-event-copy"><span className="eyebrow">{episode ? `S${season?.season_number ?? "?"} E${episode.episode_number}` : media?.kind === "show" ? "Series" : "Film"}</span><strong>{media?.title}</strong>{episode && <span>{episode.name}</span>}</div>
-          </Link><div className="history-event-meta">{(occurrenceTotals.get(key) ?? 0) > 1 && <span><RotateCcw size={13} /> Rewatch {watchNumber}</span>}<time>{event.watched_at ? new Date(event.watched_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Date unknown"}</time>{media?.kind === "show" ? <Tv size={15} /> : <Film size={15} />}<form action={deleteWatchEvent}><input type="hidden" name="eventId" value={event.id} /><input type="hidden" name="path" value="/history" /><button className="history-delete" title="Remove this watch from history" aria-label={`Remove ${media?.title} from watch history`}><Trash2 size={14} /></button></form></div>
+          </Link><div className="history-event-meta">{(occurrenceTotals.get(key) ?? 0) > 1 && <span><RotateCcw size={13} /> Rewatch {watchNumber}</span>}<time>{event.watched_at ? new Date(event.watched_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Date unknown"}</time>{media?.kind === "show" ? <Tv size={15} /> : <Film size={15} />}<DeleteWatchEventForm eventId={event.id} title={media?.title ?? "title"} /></div>
         </div>;
       })}</div>
     </section>)}</div> : <div className="empty-state"><HistoryIcon size={28} /><h2 className="display">Your diary starts with a watch</h2><p className="muted">Log a movie or episode and its exact date will appear here.</p><Link className="button accent" href="/discover">Find something to watch</Link></div>}

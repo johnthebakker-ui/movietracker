@@ -102,7 +102,7 @@ img { max-width: 100%; }
 .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin: 24px 0 34px; padding: 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); }
 .discovery-filter-card { position: relative; z-index: 10; margin: 28px 0 36px; padding: 12px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: 0 12px 44px rgba(0,0,0,.12); }
 .discovery-heading .button, .library-heading .button { border-radius: 14px; }
-.discovery-filter-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.discovery-filter-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; }
 .filter-popover { position: relative; min-width: 0; }
 .filter-popover summary { list-style: none; cursor: pointer; min-height: 64px; padding: 10px 13px; border: 1px solid transparent; border-radius: 13px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; transition: background .18s, border-color .18s; }
 .filter-popover summary::-webkit-details-marker { display: none; }
@@ -141,6 +141,7 @@ img { max-width: 100%; }
 .card-menu-trigger { position: absolute; z-index: 3; top: 8px; left: 8px; width: 29px; height: 29px; border: 1px solid rgba(255,255,255,.15); border-radius: 50%; color: #fff; background: rgba(8,9,10,.72); display: grid; place-items: center; cursor: pointer; opacity: 0; transition: opacity .18s; }
 .interactive-card:hover .card-menu-trigger, .card-menu-trigger:focus-visible { opacity: 1; }
 .media-context-menu button.danger-action { color: #ff8585; }
+.media-context-menu button.quick-remove-planned { color: #ff9b78; }
 .media-context-menu button.danger-action:hover { color: #fff; background: rgba(210,55,55,.22); }
 .quick-action-form { display: grid; }
 .context-list-section { margin-top: 5px; padding-top: 7px; border-top: 1px solid var(--line); }
@@ -187,7 +188,7 @@ img { max-width: 100%; }
 .recommendation-dismiss { margin-top: 7px; padding: 0; border: 0; color: var(--muted); background: transparent; display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: .64rem; cursor: pointer; }
 .recommendation-dismiss:hover { color: var(--text); }
 .recommendation-dismiss:disabled { cursor: wait; opacity: .58; }
-.recommendation-filter-card .recommendation-filter-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.recommendation-filter-card .recommendation-filter-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
 .recommendation-year-row { display: grid; grid-template-columns: auto 120px minmax(320px,1fr) auto; }
 .recommendation-filter-toggles { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
 .recommendation-year-row .button { margin-left: 0; }
@@ -464,6 +465,7 @@ img { max-width: 100%; }
 .history-event-copy > span:last-child:not(.eyebrow) { color: var(--muted); font-size: .78rem; }
 .history-event-meta { min-width: 105px; display: grid; justify-items: end; gap: 5px; color: var(--muted); font-size: .7rem; }
 .history-event-meta span { display: flex; align-items: center; gap: 5px; color: var(--accent); }
+.history-delete-form { margin: 0; display: flex; align-items: center; justify-content: center; }
 .history-delete { width: 29px; height: 29px; padding: 0; border: 1px solid var(--line); border-radius: 50%; color: var(--muted); background: transparent; display: grid; place-items: center; cursor: pointer; }
 .history-delete:hover { color: #ff9696; border-color: rgba(255,100,100,.45); }
 .watch-log-menu { position: relative; width: fit-content; }
@@ -808,6 +810,7 @@ img { max-width: 100%; }
   .refresh-recommendations .button { min-height: 42px; padding: 0 13px; border-radius: 12px; font-size: .65rem; }
   .refresh-recommendations small { display: none; }
   .recommendation-filter-card .recommendation-filter-grid { grid-template-columns: 1fr 1fr; }
+  .recommendation-filter-card .recommendation-filter-grid > :last-child { grid-column: 1 / -1; }
   .recommendation-year-row { grid-template-columns: minmax(0,1fr); }
   .recommendation-year-row .year-filter-heading, .recommendation-year-row .year-fields, .recommendation-filter-toggles, .recommendation-year-row .button { grid-column: 1 / -1; }
   .recommendation-filter-toggles { grid-template-columns: 1fr 1fr; }
@@ -892,7 +895,7 @@ img { max-width: 100%; }
   .history-day { grid-template-columns: 1fr; gap: 10px; }
   .history-date { position: static; }
   .history-event { grid-template-columns: 96px 1fr; }
-  .history-event-meta { grid-column: 2; display: flex; justify-content: flex-start; }
+  .history-event-meta { grid-column: 2; display: flex; align-items: center; justify-content: flex-start; gap: 9px; }
   .calendar-shell { display: none; }
   .calendar-mobile { display: grid; gap: 18px; }
   .calendar-toolbar { width: 100%; justify-content: space-between; }

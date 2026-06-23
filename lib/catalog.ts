@@ -30,6 +30,7 @@ export async function ensureMedia(detail: MediaDetail) {
     poster_path: detail.posterPath,
     backdrop_path: detail.backdropPath,
     release_date: detail.releaseDate || null,
+    end_date: detail.endDate || null,
     runtime: detail.runtime,
     status: detail.status,
     original_language: detail.originalLanguage,
@@ -72,7 +73,7 @@ export async function ensureMediaSummaries(items: MediaSummary[]) {
     tmdb_id: item.id, kind: item.kind, title: item.title, overview: item.overview,
     poster_path: item.posterPath, backdrop_path: item.backdropPath, release_date: item.releaseDate,
     genres: item.genres, vote_average: item.voteAverage, vote_count: item.voteCount,
-    popularity: item.popularity, original_language: item.originalLanguage ?? null, collection_tmdb_id: item.collectionTmdbId ?? null,
+    popularity: item.popularity, original_language: item.originalLanguage ?? null, origin_countries: item.originCountries ?? [], end_date: item.endDate ?? null, status: item.status ?? null, collection_tmdb_id: item.collectionTmdbId ?? null,
     collection_name: item.collectionName ?? null, collection_poster_path: item.collectionPosterPath ?? null,
     synced_at: new Date().toISOString(), deleted_at: null
   }));

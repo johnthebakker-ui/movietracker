@@ -18,6 +18,8 @@ export interface MediaSummary {
   posterPath: string | null;
   backdropPath: string | null;
   releaseDate: string | null;
+  endDate?: string | null;
+  status?: string | null;
   voteAverage: number;
   voteCount: number;
   communityRating?: number | null;
@@ -25,6 +27,7 @@ export interface MediaSummary {
   popularity: number;
   genres: Genre[];
   originalLanguage?: string | null;
+  originCountries?: string[];
   collectionTmdbId?: number | null;
   collectionName?: string | null;
   collectionPosterPath?: string | null;

@@ -14,9 +14,9 @@ export default async function Home() {
   return <main className="page">
     <div className="shell">
       <HomeHeroCarousel items={trending.filter(item => item.backdropPath).slice(0, 6)} />
-      <MediaSection eyebrow="Everyone is watching" title="Trending now" items={trending} href="/discover?sort=popularity.desc" />
-      <MediaSection eyebrow="Fresh from the cinema" title="New & upcoming films" items={ratedMovies} href="/discover?kind=movie&sort=primary_release_date.desc" />
-      <MediaSection eyebrow="Stories worth settling into" title="Series premieres" items={ratedShows} href="/discover?kind=show&sort=first_air_date.desc" />
+      <MediaSection eyebrow="Everyone is watching" title="Trending now" items={trending} href="/discover?kind=all&sort=popularity&view=trending" />
+      <MediaSection eyebrow="Fresh from the cinema" title="New & upcoming films" items={ratedMovies} href="/discover?kind=movie&sort=newest&view=films" />
+      <MediaSection eyebrow="Stories worth settling into" title="Series premieres" items={ratedShows} href="/discover?kind=show&sort=newest&view=series" />
     </div>
   </main>;
 }

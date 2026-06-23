@@ -7,7 +7,7 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/sup
 import { slugify } from "@/lib/utils";
 import { getMedia, getSeason } from "@/lib/tmdb";
 import { ensureMedia, ensureSeason } from "@/lib/catalog";
-import { pushTraktHistory, pushTraktRating, pushTraktWatchlist, removeTraktHistory } from "@/lib/trakt";
+import { pushTraktHistory, pushTraktRating, pushTraktWatchlist, removeTraktHistory, removeTraktWatchlist } from "@/lib/trakt";
 import { isValidRating } from "@/lib/ratings";
 import { requireMfaIfEnrolled } from "@/lib/auth-security";
 import { invalidateRecommendations } from "@/lib/recommendations";
@@ -63,14 +63,15 @@ export async function quickTrack(_previous: ListActionState, form: FormData): Pr
     const mediaId = await ensureMedia(detail);
     if (!mediaId) throw new Error("Catalog storage is not configured");
     if (intent === "favorite") await supabase.from("favorites").upsert({ user_id: user.id, media_id: mediaId }, { onConflict: "user_id,media_id" });
+    if (intent === "unplanned") await supabase.from("progress").delete().eq("user_id", user.id).eq("media_id", mediaId).eq("status", "planned");
     if (intent === "planned" || intent === "completed") {
       const now = new Date().toISOString();
       await supabase.from("progress").upsert({ user_id: user.id, media_id: mediaId, status: intent, completed_at: intent === "completed" ? now : null, updated_at: now });
       if (intent === "completed" && kind === "movie") await supabase.from("watch_events").insert({ user_id: user.id, media_id: mediaId, duration_minutes: detail.runtime, watched_at: now });
     }
-    try { if (intent === "planned") await pushTraktWatchlist(user.id, { kind, tmdbId }); if (intent === "completed" && kind === "movie") await pushTraktHistory(user.id, { kind: "movie", tmdbId, watchedAt: new Date().toISOString() }); } catch (error) { console.error("Trakt quick action push failed", error); }
+    try { if (intent === "planned") await pushTraktWatchlist(user.id, { kind, tmdbId }); if (intent === "unplanned") await removeTraktWatchlist(user.id, { kind, tmdbId }); if (intent === "completed" && kind === "movie") await pushTraktHistory(user.id, { kind: "movie", tmdbId, watchedAt: new Date().toISOString() }); } catch (error) { console.error("Trakt quick action push failed", error); }
     revalidatePath("/library"); revalidatePath("/history");
-    return { status: "success", message: intent === "favorite" ? "Added to favorites" : intent === "completed" ? "Marked watched" : "Added to watchlist" };
+    return { status: "success", message: intent === "favorite" ? "Added to favorites" : intent === "completed" ? "Marked watched" : intent === "unplanned" ? "Removed from watchlist" : "Added to watchlist" };
   } catch (error) { return { status: "error", message: error instanceof Error ? error.message : "Could not save that action" }; }
 }
 

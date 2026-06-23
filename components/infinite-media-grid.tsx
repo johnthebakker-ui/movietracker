@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MediaCard } from "@/components/media-card";
-import type { MediaKind, MediaSummary } from "@/lib/types";
+import type { MediaSummary } from "@/lib/types";
+import type { DiscoveryFormat } from "@/lib/catalog-discovery";
 
-export function InfiniteMediaGrid({ initialItems, initialPage, totalPages, kind, filters }: { initialItems: MediaSummary[]; initialPage: number; totalPages: number; kind: MediaKind; filters: Record<string, string> }) {
+export function InfiniteMediaGrid({ initialItems, initialPage, totalPages, kind, filters }: { initialItems: MediaSummary[]; initialPage: number; totalPages: number; kind: DiscoveryFormat; filters: Record<string, string> }) {
   const [items, setItems] = useState(initialItems); const [page, setPage] = useState(initialPage); const [loading, setLoading] = useState(false); const [failed, setFailed] = useState(""); const [retry, setRetry] = useState(0);
   const sentinel = useRef<HTMLDivElement>(null);
   useEffect(() => {

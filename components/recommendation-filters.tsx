@@ -1,10 +1,10 @@
 "use client";
 
-import { CalendarDays, Clapperboard, SlidersHorizontal } from "lucide-react";
-import { ChoiceMenu } from "@/components/discovery-filters";
+import { CalendarDays, Clapperboard, Globe2, SlidersHorizontal } from "lucide-react";
+import { ChoiceMenu, countryChoices } from "@/components/discovery-filters";
 import type { Genre } from "@/lib/types";
 
-type Params = { kind?: string; genre?: string; year?: string; hideWatched?: string; hideListed?: string };
+type Params = { kind?: string; genre?: string; country?: string; year?: string; hideWatched?: string; hideListed?: string };
 
 export function RecommendationFilters({ genres, params }: { genres: Genre[]; params: Params }) {
   const genreChoices = [...genres.map(genre => ({ value: String(genre.id), label: genre.name })), { value: "kdrama", label: "K-Drama" }].sort((a, b) => a.label.localeCompare(b.label));
@@ -12,6 +12,7 @@ export function RecommendationFilters({ genres, params }: { genres: Genre[]; par
     <div className="discovery-filter-grid recommendation-filter-grid">
       <ChoiceMenu label="Format" icon={<Clapperboard size={17} />} name="kind" value={params.kind ?? ""} choices={[{ value: "", label: "Movies & series" }, { value: "movie", label: "Movies" }, { value: "show", label: "Series" }]} />
       <ChoiceMenu label="Genre" icon={<SlidersHorizontal size={17} />} name="genre" value={params.genre ?? ""} choices={[{ value: "", label: "Every genre" }, ...genreChoices]} />
+      <ChoiceMenu label="Country" icon={<Globe2 size={17} />} name="country" value={params.genre === "kdrama" ? "KR" : params.country ?? ""} choices={countryChoices} />
     </div>
     <div className="year-filter-row recommendation-year-row">
       <div className="year-filter-heading"><CalendarDays size={17} /><span className="muted">Release year</span></div>
@@ -21,4 +22,3 @@ export function RecommendationFilters({ genres, params }: { genres: Genre[]; par
     </div>
   </form>;
 }
-

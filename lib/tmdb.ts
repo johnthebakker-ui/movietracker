@@ -35,11 +35,14 @@ function summary(item: any, forcedKind?: MediaKind): MediaSummary {
     posterPath: item.poster_path ?? null,
     backdropPath: item.backdrop_path ?? null,
     releaseDate: item.release_date ?? item.first_air_date ?? null,
+    endDate: item.last_air_date ?? null,
+    status: item.status ?? null,
     voteAverage: item.vote_average ?? 0,
     voteCount: item.vote_count ?? 0,
     popularity: item.popularity ?? 0,
     genres: genreObjects,
     originalLanguage: item.original_language ?? null,
+    originCountries: item.origin_country ?? (item.production_countries ?? []).map((country: any) => country.iso_3166_1).filter(Boolean),
     collectionTmdbId: item.belongs_to_collection?.id ?? null,
     collectionName: item.belongs_to_collection?.name ?? null,
     collectionPosterPath: item.belongs_to_collection?.poster_path ?? null
@@ -54,7 +57,12 @@ export const getTrending = unstable_cache(async (): Promise<MediaSummary[]> => {
 export async function discover(kind: MediaKind, options: Record<string, string | undefined> = {}): Promise<{items: MediaSummary[]; page: number; totalPages: number}> {
   const pathKind = kind === "show" ? "tv" : "movie";
   const data = await request<any>(`/discover/${pathKind}`, { language: "en-US", include_adult: false, sort_by: "popularity.desc", ...options });
-  return { items: data.results.map((x: any) => summary(x, kind)), page: data.page, totalPages: data.total_pages };
+  return { items: data.results.filter((x: any) => Boolean(x.poster_path)).map((x: any) => summary(x, kind)), page: data.page, totalPages: data.total_pages };
+}
+
+export async function getCollection(id: number): Promise<MediaSummary[]> {
+  const data = await request<any>(`/collection/${id}`, { language: "en-US" });
+  return (data.parts ?? []).filter((item: any) => Boolean(item.poster_path)).map((item: any) => summary(item, "movie")).sort((a: MediaSummary, b: MediaSummary) => (a.releaseDate ?? "9999").localeCompare(b.releaseDate ?? "9999"));
 }
 
 export async function searchMedia(query: string, page = 1): Promise<MediaSummary[]> {
