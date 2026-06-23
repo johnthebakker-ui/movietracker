@@ -14,12 +14,12 @@ const validYear = (value?: string) => value && /^\d{4}$/.test(value) ? Number(va
 
 export default async function Discover({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   if (!hasTmdb) return <main className="page"><div className="shell"><ConfigNotice service="TMDB" /></div></main>;
-  const params = await searchParams; const kind: MediaKind = params.kind === "show" ? "show" : "movie"; const mode = params.yearMode === "range" ? "range" : "exact";
+  const params = await searchParams; const kdrama = params.genre === "kdrama"; const kind: MediaKind = kdrama || params.kind === "show" ? "show" : "movie"; const mode = params.yearMode === "range" ? "range" : "exact";
   const exactYear = validYear(params.year); const fromYear = validYear(params.fromYear); const toYear = validYear(params.toYear);
   const invalidRange = mode === "range" && fromYear !== null && toYear !== null && fromYear > toYear;
   const dateFrom = mode === "exact" && exactYear ? `${exactYear}-01-01` : mode === "range" && fromYear ? `${fromYear}-01-01` : undefined;
   const dateTo = mode === "exact" && exactYear ? `${exactYear}-12-31` : mode === "range" && toYear ? `${toYear}-12-31` : undefined;
-  const tmdbFilters: Record<string, string | undefined> = { sort_by: params.sort ?? "popularity.desc", with_genres: params.genre, "vote_average.gte": params.rating, "vote_count.gte": params.rating ? "50" : undefined, "primary_release_date.gte": kind === "movie" ? dateFrom : undefined, "primary_release_date.lte": kind === "movie" ? dateTo : undefined, "first_air_date.gte": kind === "show" ? dateFrom : undefined, "first_air_date.lte": kind === "show" ? dateTo : undefined };
+  const tmdbFilters: Record<string, string | undefined> = { sort_by: params.sort ?? "popularity.desc", with_genres: kdrama ? undefined : params.genre, with_original_language: kdrama ? "ko" : undefined, "vote_average.gte": params.rating, "vote_count.gte": params.rating ? "50" : undefined, "primary_release_date.gte": kind === "movie" ? dateFrom : undefined, "primary_release_date.lte": kind === "movie" ? dateTo : undefined, "first_air_date.gte": kind === "show" ? dateFrom : undefined, "first_air_date.lte": kind === "show" ? dateTo : undefined };
   const genres = await getGenres(kind); const data = invalidRange ? { items: [], page: 1, totalPages: 1 } : await discover(kind, tmdbFilters);
   const ratedItems = await withCommunityRatings(data.items);
   const apiFilters = Object.fromEntries(Object.entries(tmdbFilters).filter((entry): entry is [string, string] => Boolean(entry[1])));

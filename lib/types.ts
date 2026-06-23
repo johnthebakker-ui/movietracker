@@ -24,6 +24,7 @@ export interface MediaSummary {
   communityRatingCount?: number;
   popularity: number;
   genres: Genre[];
+  originalLanguage?: string | null;
   collectionTmdbId?: number | null;
   collectionName?: string | null;
   collectionPosterPath?: string | null;

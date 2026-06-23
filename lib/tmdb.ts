@@ -39,6 +39,7 @@ function summary(item: any, forcedKind?: MediaKind): MediaSummary {
     voteCount: item.vote_count ?? 0,
     popularity: item.popularity ?? 0,
     genres: genreObjects,
+    originalLanguage: item.original_language ?? null,
     collectionTmdbId: item.belongs_to_collection?.id ?? null,
     collectionName: item.belongs_to_collection?.name ?? null,
     collectionPosterPath: item.belongs_to_collection?.poster_path ?? null
