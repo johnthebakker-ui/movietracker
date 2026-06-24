@@ -13,7 +13,7 @@ export default async function ProfileSettings({ searchParams }: { searchParams: 
     <form className="panel" action={updateProfile}>
       <div className="form-grid">
         <div className="field"><label>Display name</label><input className="input" name="displayName" defaultValue={profile?.display_name ?? ""} /></div>
-        <div className="field"><label>Username</label><input className="input" name="username" required pattern="[A-Za-z0-9_]{3,24}" defaultValue={profile?.username} /></div>
+        <div className="field"><label>Username</label><div className="username-input"><span aria-hidden="true">@</span><input className="input" name="username" required pattern="[A-Za-z0-9_]{3,24}" minLength={3} maxLength={24} autoCapitalize="none" autoCorrect="off" spellCheck={false} defaultValue={profile?.username} /></div><small className="muted">Unique, 3–24 characters. Letters, numbers and underscores only.</small></div>
         <div className="field"><label>Avatar <span className="muted">· JPEG, PNG or WebP · max 5 MB</span></label><input className="input" name="avatar" type="file" accept="image/png,image/jpeg,image/webp" /></div>
         <div className="field"><label>Banner <span className="muted">· JPEG, PNG or WebP · max 5 MB</span></label><input className="input" name="banner" type="file" accept="image/png,image/jpeg,image/webp" /></div>
         <div className="field"><label>Region</label><input className="input" name="region" minLength={2} maxLength={2} defaultValue={profile?.region ?? "US"} /></div>

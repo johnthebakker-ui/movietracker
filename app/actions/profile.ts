@@ -14,8 +14,15 @@ async function authed() {
 
 export async function updateProfile(form: FormData) {
   const { supabase, user } = await authed();
-  const username = String(form.get("username") ?? "").trim();
+  const username = String(form.get("username") ?? "").trim().toLowerCase();
   try {
+    if (!/^[a-z0-9_]{3,24}$/.test(username)) throw new Error("Your @username must be 3–24 characters using only letters, numbers, or underscores");
+    const { data: currentProfile } = await supabase.from("profiles").select("username").eq("id", user.id).single();
+    const lookup = createSupabaseAdminClient() ?? supabase;
+    const escapedUsername = username.replace(/[\\%_]/g, character => `\\${character}`);
+    const { data: matches, error: lookupError } = await lookup.from("profiles").select("id,username").ilike("username", escapedUsername).limit(5);
+    if (lookupError) throw lookupError;
+    if ((matches ?? []).some(profile => profile.id !== user.id && profile.username.toLowerCase() === username)) throw new Error(`That @${username} is already taken`);
     const uploads: Record<string, string> = {};
     for (const key of ["avatar", "banner"] as const) {
       const file = form.get(key);
@@ -34,7 +41,9 @@ export async function updateProfile(form: FormData) {
       language: String(form.get("language") ?? "en-US"), theme: String(form.get("theme") ?? "system"),
       adult_content: form.get("adultContent") === "on", ...uploads, updated_at: new Date().toISOString()
     }).eq("id", user.id);
+    if (error?.code === "23505") throw new Error(`That @${username} is already taken`);
     if (error) throw error;
+    if (currentProfile?.username && currentProfile.username !== username) revalidatePath(`/profile/${currentProfile.username}`);
   } catch (error) {
     redirect(`/settings/profile?error=${encodeURIComponent(error instanceof Error ? error.message : "Profile update failed")}`);
   }
