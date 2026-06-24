@@ -20,6 +20,7 @@ const tasteCategories: Record<number, string> = {
 function mediaRelation(row: any) { return Array.isArray(row?.media) ? row.media[0] : row?.media; }
 function categoriesFromGenres(genres: any[]) { return [...new Set((genres ?? []).map(genre => tasteCategories[Number(genre.id)]).filter(Boolean))] as string[]; }
 function isKdramaSummary(item: MediaSummary) { return item.kind === "show" && item.originalLanguage === "ko" && item.originCountries?.includes("KR") && item.genres.some(genre => Number(genre.id) === 18) && !item.genres.some(genre => Number(genre.id) === 16); }
+function rotationValue(seed: string, mediaId: number) { let hash = 2166136261; for (const character of `${seed}:${mediaId}`) { hash ^= character.charCodeAt(0); hash = Math.imul(hash, 16777619); } return hash >>> 0; }
 
 async function kdramaTasteProfile(supabase: any, userId: string) {
   const [ratings, favorites, completed] = await Promise.all([
@@ -78,7 +79,7 @@ export async function ensureRecommendations(userId: string, force = false) {
 
 export async function recommendationPage(supabase: any, userId: string, filters: RecommendationFilters, offset = 0, size = 24): Promise<RecommendationPage> {
   const [recommendations, watches, completed, lists, dismissals] = await Promise.all([
-    supabase.from("recommendations").select("score,reasons,media(*)").eq("user_id", userId).is("dismissed_at", null).order("score", { ascending: false }).limit(1000),
+    supabase.from("recommendations").select("score,reasons,generated_at,media(*)").eq("user_id", userId).is("dismissed_at", null).order("score", { ascending: false }).limit(1000),
     filters.hideWatched ? supabase.from("watch_events").select("media_id").eq("user_id", userId) : Promise.resolve({ data: [] }),
     filters.hideWatched ? supabase.from("progress").select("media_id").eq("user_id", userId).eq("status", "completed") : Promise.resolve({ data: [] }),
     filters.hideListed ? supabase.from("lists").select("id").eq("user_id", userId) : Promise.resolve({ data: [] }),
@@ -93,6 +94,12 @@ export async function recommendationPage(supabase: any, userId: string, filters:
       const tasteScore = matches.reduce((sum, match) => sum + match.score, 0);
       return { ...row, kdramaTasteScore: tasteScore, tasteReason: matches.length ? `Because you often watch ${matches.slice(0, 2).map(match => match.category).join(" and ")}` : "A well-regarded Korean drama" };
     }).sort((a: any, b: any) => b.kdramaTasteScore - a.kdramaTasteScore || Number(b.score) - Number(a.score));
+    const rotationWindowSize = Math.min(72, filtered.length); const rotationSeed = filtered[0]?.generated_at ?? "kdrama";
+    filtered = [...filtered.slice(0, rotationWindowSize).sort((a: any, b: any) => rotationValue(rotationSeed, a.media.id) - rotationValue(rotationSeed, b.media.id)), ...filtered.slice(rotationWindowSize)];
   }
-  const page = filtered.slice(offset, offset + size).map((row: any) => ({ item: fromDbMedia(row.media), reason: row.tasteReason ?? row.reasons?.[0] ?? "Chosen for your taste" })); return { items: page, nextCursor: offset + size < filtered.length ? String(offset + size) : null, total: filtered.length };
+  const selectedRows = filtered.slice(offset, offset + size); const selectedItems: MediaSummary[] = selectedRows.map((row: any) => fromDbMedia(row.media));
+  const showsMissingRun = selectedItems.filter(item => item.kind === "show" && (!item.status || (["Ended", "Canceled", "Cancelled"].includes(item.status) && !item.endDate)));
+  const refreshedResults = await Promise.allSettled(showsMissingRun.map(item => getMedia("show", item.id))); const refreshedShows = refreshedResults.flatMap(result => result.status === "fulfilled" ? [result.value] : []);
+  if (refreshedShows.length) await ensureMediaSummaries(refreshedShows); const refreshedMap = new Map(refreshedShows.map(item => [`${item.kind}-${item.id}`, item]));
+  const page = selectedRows.map((row: any, index: number) => { const item = selectedItems[index]; return { item: refreshedMap.get(`${item.kind}-${item.id}`) ?? item, reason: row.tasteReason ?? row.reasons?.[0] ?? "Chosen for your taste" }; }); return { items: page, nextCursor: offset + size < filtered.length ? String(offset + size) : null, total: filtered.length };
 }
