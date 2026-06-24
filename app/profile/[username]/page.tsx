@@ -7,7 +7,8 @@ import { MediaCard } from "@/components/media-card";
 import { ListCardArt } from "@/components/list-card-art";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fromDbMedia } from "@/lib/db-mappers";
-import { imageUrl } from "@/lib/tmdb";
+import { ensureMediaSummaries } from "@/lib/catalog";
+import { getMedia, imageUrl } from "@/lib/tmdb";
 import { withCommunityRatings } from "@/lib/community-ratings";
 
 export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
@@ -45,7 +46,14 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   for (const day of [...watchedDays].reverse()) { const value = new Date(`${day}T12:00:00Z`).getTime(); running = previousDay !== null && value - previousDay === 86400000 ? running + 1 : 1; longestStreak = Math.max(longestStreak, running); previousDay = value; }
   if (watchedDays.length) { const cursor = new Date(); cursor.setUTCHours(0, 0, 0, 0); const latest = new Date(`${watchedDays[0]}T00:00:00Z`); if ((cursor.getTime() - latest.getTime()) / 86400000 <= 1) { for (const day of watchedDays) { const expected = cursor.toISOString().slice(0, 10); const yesterday = new Date(cursor.getTime() - 86400000).toISOString().slice(0, 10); if (day === expected || (currentStreak === 0 && day === yesterday)) { currentStreak++; cursor.setUTCDate(cursor.getUTCDate() - (day === expected ? 1 : 2)); } else break; } } }
   const rawFavoriteItems = (favorites.data ?? []).map((row: any) => row.media).filter(Boolean).map(fromDbMedia);
-  const ratedProfileItems = await withCommunityRatings([...rawCurrentlyWatching.map(row => row.item!), ...rawFavoriteItems], supabase);
+  const rawProfileItems = [...rawCurrentlyWatching.map(row => row.item!), ...rawFavoriteItems];
+  const showsMissingRun = [...new Map(rawProfileItems.filter(item => item.kind === "show" && (!item.status || (["Ended", "Canceled", "Cancelled"].includes(item.status) && !item.endDate))).map(item => [`${item.kind}-${item.id}`, item])).values()];
+  const refreshedShowResults = await Promise.allSettled(showsMissingRun.map(item => getMedia("show", item.id)));
+  const refreshedShows = refreshedShowResults.flatMap(result => result.status === "fulfilled" ? [result.value] : []);
+  if (refreshedShows.length) await ensureMediaSummaries(refreshedShows);
+  const refreshedShowMap = new Map(refreshedShows.map(item => [`${item.kind}-${item.id}`, item]));
+  const profileItems = rawProfileItems.map(item => refreshedShowMap.get(`${item.kind}-${item.id}`) ?? item);
+  const ratedProfileItems = await withCommunityRatings(profileItems, supabase);
   const profileRatingMap = new Map(ratedProfileItems.map(item => [`${item.kind}-${item.id}`, item]));
   const currentlyWatching = rawCurrentlyWatching.map(row => ({ ...row, item: profileRatingMap.get(`${row.item!.kind}-${row.item!.id}`) ?? row.item }));
   const favoriteItems = rawFavoriteItems.map(item => profileRatingMap.get(`${item.kind}-${item.id}`) ?? item);

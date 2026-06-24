@@ -756,11 +756,11 @@ img { max-width: 100%; }
   .filter-summary-icon { width: 30px; height: 30px; border-radius: 9px; }
   .filter-popover summary small { font-size: .56rem; }
   .filter-popover summary strong { font-size: .72rem; }
-  .filter-menu { position: fixed; z-index: 130; left: 10px; right: 10px; top: auto; bottom: 80px; width: auto; max-height: min(430px,58vh); padding: 7px 8px 10px; border-radius: 18px; }
-  .filter-sheet-heading { position: sticky; z-index: 2; top: -7px; margin: -7px -8px 3px; padding: 8px 14px 9px; background: var(--surface); display: grid; justify-items: center; gap: 7px; border-radius: 18px 18px 0 0; }
-  .filter-sheet-heading > span { width: 34px; height: 4px; border-radius: 999px; background: color-mix(in srgb,var(--muted) 45%,transparent); }
-  .filter-sheet-heading strong { width: 100%; color: var(--muted); font-size: .63rem; letter-spacing: .08em; text-transform: uppercase; }
-  .filter-option { min-height: 46px; padding: 10px 14px; grid-template-columns: minmax(0,1fr) 22px; border-radius: 11px; font-size: .82rem; }
+  .filter-popover[open] { z-index: 60; }
+  .filter-menu { position: absolute; z-index: 130; left: 0; right: auto; top: calc(100% + 6px); bottom: auto; width: max(220px,100%); max-width: calc(100vw - 36px); max-height: min(330px,48vh); padding: 7px; border-radius: 14px; }
+  .discovery-filter-grid > .filter-popover:nth-child(even) .filter-menu { left: auto; right: 0; }
+  .filter-sheet-heading { display: none; }
+  .filter-option { min-height: 42px; padding: 9px 11px; grid-template-columns: minmax(0,1fr) 22px; border-radius: 9px; font-size: .78rem; }
   .filter-option.selected { color: var(--text); background: var(--surface-2); }
   .year-filter-row { padding: 10px 5px 2px; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 9px; }
   .year-filter-heading { min-width: 0; }

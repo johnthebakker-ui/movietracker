@@ -9,12 +9,37 @@ type Signal = { media: DbMedia; weight: number; reason: string };
 export type RecommendationFilters = { kind?: string; genre?: string; country?: string; year?: string; hideWatched?: boolean; hideListed?: boolean };
 export type RecommendationEntry = { item: MediaSummary; reason: string };
 export type RecommendationPage = { items: RecommendationEntry[]; nextCursor: string | null; total: number };
+const kdramaPoolMarker = "kdrama-taste-pool-v2";
+
+const tasteCategories: Record<number, string> = {
+  28: "action", 10759: "action", 12: "adventure", 14: "fantasy", 10765: "fantasy", 878: "science fiction",
+  35: "comedy", 80: "crime", 9648: "mystery", 10749: "romance", 53: "thriller", 10751: "family",
+  10762: "family", 10768: "war", 36: "history", 99: "documentary"
+};
+
+function mediaRelation(row: any) { return Array.isArray(row?.media) ? row.media[0] : row?.media; }
+function categoriesFromGenres(genres: any[]) { return [...new Set((genres ?? []).map(genre => tasteCategories[Number(genre.id)]).filter(Boolean))] as string[]; }
+function isKdramaSummary(item: MediaSummary) { return item.kind === "show" && item.originalLanguage === "ko" && item.originCountries?.includes("KR") && item.genres.some(genre => Number(genre.id) === 18) && !item.genres.some(genre => Number(genre.id) === 16); }
+
+async function kdramaTasteProfile(supabase: any, userId: string) {
+  const [ratings, favorites, completed] = await Promise.all([
+    supabase.from("ratings").select("score,media(genres)").eq("user_id", userId).gte("score", 6),
+    supabase.from("favorites").select("media(genres)").eq("user_id", userId),
+    supabase.from("progress").select("media(genres)").eq("user_id", userId).eq("status", "completed")
+  ]);
+  const affinities = new Map<string, number>();
+  const add = (row: any, weight: number) => categoriesFromGenres(mediaRelation(row)?.genres ?? []).forEach(category => affinities.set(category, (affinities.get(category) ?? 0) + weight));
+  (ratings.data ?? []).forEach((row: any) => add(row, Math.max(1, Number(row.score) - 5)));
+  (favorites.data ?? []).forEach((row: any) => add(row, 5));
+  (completed.data ?? []).forEach((row: any) => add(row, 2));
+  return affinities;
+}
 
 export async function invalidateRecommendations(userId: string) { const admin = createSupabaseAdminClient(); if (admin) await admin.from("recommendations").delete().eq("user_id", userId); }
 
 export async function ensureRecommendations(userId: string, force = false) {
   const admin = createSupabaseAdminClient(); if (!admin) return;
-  if (!force) { const latest = (await admin.from("recommendations").select("generated_at").eq("user_id", userId).order("generated_at", { ascending: false }).limit(1).maybeSingle()).data?.generated_at; if (latest && Date.now() - new Date(latest).getTime() < 24 * 60 * 60_000) return; }
+  if (!force) { const latest = (await admin.from("recommendations").select("generated_at").eq("user_id", userId).order("generated_at", { ascending: false }).limit(1).maybeSingle()).data?.generated_at; if (latest && Date.now() - new Date(latest).getTime() < 24 * 60 * 60_000) { const currentPool = await admin.from("recommendations").select("media_id").eq("user_id", userId).contains("reasons", [kdramaPoolMarker]).limit(1); if (currentPool.data?.length) return; } }
   const [ratingResult, favoriteResult, progressResult] = await Promise.all([
     admin.from("ratings").select("score,media(id,tmdb_id,kind,title)").eq("user_id", userId).gte("score", 7).order("score", { ascending: false }).limit(16),
     admin.from("favorites").select("media(id,tmdb_id,kind,title)").eq("user_id", userId).limit(30),
@@ -31,7 +56,7 @@ export async function ensureRecommendations(userId: string, force = false) {
   const affinityPools = topGenres.flatMap(([genreId]) => (["movie", "show"] as MediaKind[]).flatMap(kind =>
     [1, 2, 3, 4].map(page => discover(kind, { with_genres: String(genreId), sort_by: "vote_count.desc", "vote_average.gte": "5.5", "vote_count.gte": "40", page: String(page) }).then(data => ({ type: "affinity" as const, genreId, data })))
   ));
-  const koreanDramaPools = [1, 2, 3, 4, 5].map(page => discover("show", { with_genres: "18", without_genres: "16", with_origin_country: "KR", with_original_language: "ko", sort_by: "vote_count.desc", "vote_count.gte": "20", page: String(page) }).then(data => ({ type: "kdrama" as const, genreId: 18, data })));
+  const koreanDramaPools = Array.from({ length: 10 }, (_, index) => index + 1).map(page => discover("show", { with_genres: "18", without_genres: "16", with_origin_country: "KR", with_original_language: "ko", sort_by: "vote_count.desc", "vote_count.gte": "10", page: String(page) }).then(data => ({ type: "kdrama" as const, genreId: 18, data })));
   const pools = await Promise.allSettled([...affinityPools, ...koreanDramaPools]);
   for (const result of pools) { if (result.status !== "fulfilled") continue; const affinity = result.value.type === "kdrama" ? countryAffinities.get("KR") ?? 0 : affinities.get(result.value.genreId) ?? 1; result.value.data.items.forEach((item, index) => { const key = `${item.kind}-${item.id}`; const score = affinity * .22 + item.voteAverage * .45 + Math.max(0, 20 - index) / 10; const existing = candidates.get(key); const reason = result.value.type === "kdrama" ? "A well-regarded Korean drama matching your filters" : "Because this fits genres you watch often"; if (!existing || score > existing.score) candidates.set(key, { item, score, reason }); }); }
   if (!candidates.size) (await getTrending()).forEach((item, index) => candidates.set(`${item.kind}-${item.id}`, { item, score: 20 - index, reason: "Trending while MovieTracker learns your taste" }));
@@ -47,7 +72,7 @@ export async function ensureRecommendations(userId: string, force = false) {
     displayRanked.splice(0, rotationSize, ...rotation);
   }
   const mediaRows = await ensureMediaSummaries(displayRanked.map(entry => entry.item)); const ids = new Map(mediaRows.map(row => [`${row.kind}-${row.tmdb_id}`, row.id])); const now = new Date().toISOString();
-  const records = displayRanked.map((entry, index) => ({ user_id: userId, media_id: ids.get(`${entry.item.kind}-${entry.item.id}`), score: force ? displayRanked.length - index : entry.score, reasons: [entry.reason], generated_at: now })).filter(row => row.media_id);
+  const records = displayRanked.map((entry, index) => ({ user_id: userId, media_id: ids.get(`${entry.item.kind}-${entry.item.id}`), score: force ? displayRanked.length - index : entry.score, reasons: isKdramaSummary(entry.item) ? [entry.reason, kdramaPoolMarker] : [entry.reason], generated_at: now })).filter(row => row.media_id);
   if (records.length) { await admin.from("recommendations").delete().eq("user_id", userId); for (let index = 0; index < records.length; index += 500) { const { error } = await admin.from("recommendations").insert(records.slice(index, index + 500)); if (error) throw error; } }
 }
 
@@ -60,6 +85,14 @@ export async function recommendationPage(supabase: any, userId: string, filters:
     supabase.from("recommendation_dismissals").select("media_id").eq("user_id", userId)
   ]);
   const watched = new Set([...(watches.data ?? []), ...(completed.data ?? [])].map((row: any) => row.media_id)); const dismissed = new Set((dismissals.data ?? []).map((row: any) => row.media_id)); const listIds = (lists.data ?? []).map((row: any) => row.id); const listedRows = filters.hideListed && listIds.length ? (await supabase.from("list_items").select("media_id").in("list_id", listIds)).data ?? [] : []; const listed = new Set(listedRows.map((row: any) => row.media_id));
-  const filtered = (recommendations.data ?? []).map((row: any) => ({ ...row, media: Array.isArray(row.media) ? row.media[0] : row.media })).filter((row: any) => { const genres = row.media?.genres ?? []; const countries = row.media?.origin_countries ?? []; const isKdrama = row.media?.kind === "show" && row.media?.original_language === "ko" && countries.includes("KR") && genres.some((genre: any) => Number(genre.id) === 18) && !genres.some((genre: any) => Number(genre.id) === 16); return row.media && row.media.poster_path && !dismissed.has(row.media.id) && (!filters.kind || row.media.kind === filters.kind) && (!filters.country || countries.includes(filters.country)) && (!filters.year || row.media.release_date?.startsWith(filters.year)) && (!filters.genre || (filters.genre === "kdrama" ? isKdrama : genres.some((genre: any) => String(genre.id) === filters.genre))) && (!filters.hideWatched || !watched.has(row.media.id)) && (!filters.hideListed || !listed.has(row.media.id)); });
-  const page = filtered.slice(offset, offset + size).map((row: any) => ({ item: fromDbMedia(row.media), reason: row.reasons?.[0] ?? "Chosen for your taste" })); return { items: page, nextCursor: offset + size < filtered.length ? String(offset + size) : null, total: filtered.length };
+  let filtered = (recommendations.data ?? []).map((row: any) => ({ ...row, media: Array.isArray(row.media) ? row.media[0] : row.media })).filter((row: any) => { const genres = row.media?.genres ?? []; const countries = row.media?.origin_countries ?? []; const isKdrama = row.media?.kind === "show" && row.media?.original_language === "ko" && countries.includes("KR") && genres.some((genre: any) => Number(genre.id) === 18) && !genres.some((genre: any) => Number(genre.id) === 16); return row.media && row.media.poster_path && !dismissed.has(row.media.id) && (!filters.kind || row.media.kind === filters.kind) && (!filters.country || countries.includes(filters.country)) && (!filters.year || row.media.release_date?.startsWith(filters.year)) && (!filters.genre || (filters.genre === "kdrama" ? isKdrama : genres.some((genre: any) => String(genre.id) === filters.genre))) && (!filters.hideWatched || !watched.has(row.media.id)) && (!filters.hideListed || !listed.has(row.media.id)); });
+  if (filters.genre === "kdrama") {
+    const affinities = await kdramaTasteProfile(supabase, userId);
+    filtered = filtered.map((row: any) => {
+      const matches = categoriesFromGenres(row.media?.genres ?? []).map(category => ({ category, score: affinities.get(category) ?? 0 })).filter(match => match.score > 0).sort((a, b) => b.score - a.score);
+      const tasteScore = matches.reduce((sum, match) => sum + match.score, 0);
+      return { ...row, kdramaTasteScore: tasteScore, tasteReason: matches.length ? `Because you often watch ${matches.slice(0, 2).map(match => match.category).join(" and ")}` : "A well-regarded Korean drama" };
+    }).sort((a: any, b: any) => b.kdramaTasteScore - a.kdramaTasteScore || Number(b.score) - Number(a.score));
+  }
+  const page = filtered.slice(offset, offset + size).map((row: any) => ({ item: fromDbMedia(row.media), reason: row.tasteReason ?? row.reasons?.[0] ?? "Chosen for your taste" })); return { items: page, nextCursor: offset + size < filtered.length ? String(offset + size) : null, total: filtered.length };
 }

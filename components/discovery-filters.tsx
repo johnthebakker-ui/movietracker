@@ -32,7 +32,7 @@ export function DiscoveryFilters({ kind, genres, params }: { kind: DiscoveryForm
     <div className="discovery-filter-grid">
       <ChoiceMenu label="Format" icon={formatIcon} name="kind" value={kind} choices={[{ value: "all", label: "Movies & series" }, { value: "movie", label: "Movies" }, { value: "show", label: "Series" }]} />
       <ChoiceMenu label="Genre" icon={<SlidersHorizontal size={17} />} name="genre" value={params.genre ?? ""} choices={[{ value: "", label: "Every genre" }, ...genreChoices]} />
-      <ChoiceMenu label="Country" icon={<Globe2 size={17} />} name="country" value={params.genre === "kdrama" ? "KR" : params.country ?? ""} choices={countryChoices} />
+      <ChoiceMenu label="Country" icon={<Globe2 size={17} />} name="country" value={params.country ?? ""} choices={countryChoices} />
       <ChoiceMenu label="Rating" icon={<Gauge size={17} />} name="rating" value={params.rating ?? ""} choices={[{ value: "", label: "Any rating" }, { value: "6", label: "6.0 and above" }, { value: "7", label: "7.0 and above" }, { value: "8", label: "8.0 and above" }]} />
       <ChoiceMenu label="Sort by" icon={<ChevronDown size={17} />} name="sort" value={normalizedSort} choices={[{ value: "popularity", label: "Most popular" }, { value: "rating", label: "Highest rated" }, { value: "newest", label: "Newest releases" }]} />
     </div>
