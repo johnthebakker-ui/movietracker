@@ -124,7 +124,7 @@ img { max-width: 100%; }
 .year-mode input { position: absolute; opacity: 0; }
 .year-input { width: 110px; border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; color: var(--text); background: var(--surface-2); }
 .year-filter-row .button { margin-left: auto; }
-.discovery-animation-toggle { min-height: 38px; font-size: .72rem; }
+.discovery-animation-toggle { min-height: 38px; font-size: .72rem; white-space: nowrap; }
 .infinite-sentinel { min-height: 100px; padding: 36px; display: grid; place-items: center; color: var(--muted); font-size: .75rem; }
 .interactive-card { position: relative; touch-action: pan-y; -webkit-tap-highlight-color: transparent; }
 .interactive-card, .interactive-card * { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; }
@@ -774,6 +774,7 @@ img { max-width: 100%; }
   .year-fields { width: 100%; grid-column: 1 / -1; }
   .year-fields.range { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); }
   .year-input { width: 100%; min-height: 43px; }
+  .discovery-animation-toggle { width: 100%; min-height: 44px; grid-column: 1 / -1; border-radius: 11px; font-size: .72rem; }
   .year-filter-row .button { width: 100%; min-height: 44px; margin-left: 0; grid-column: 1 / -1; border-radius: 11px; }
   .detail-hero { min-height: 680px; margin-top: -24px; }
   .detail-hero::before { background: linear-gradient(0deg, rgba(5,6,7,.99) 0%, rgba(5,6,7,.68) 68%, rgba(5,6,7,.15)); }
