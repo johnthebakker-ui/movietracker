@@ -16,6 +16,7 @@ export async function discoverCatalog(params: DiscoveryParams) {
   const kdrama = params.genre === "kdrama";
   const requestedFormat: DiscoveryFormat = params.kind === "movie" || params.kind === "show" ? params.kind : "all";
   const format: DiscoveryFormat = kdrama ? "show" : requestedFormat;
+  const hideAnimation = params.hideAnimation === "1";
   const yearMode = params.yearMode === "range" ? "range" : "exact";
   const exactYear = validYear(params.year); const fromYear = validYear(params.fromYear); const toYear = validYear(params.toYear);
   const invalidRange = yearMode === "range" && fromYear !== null && toYear !== null && fromYear > toYear;
@@ -25,7 +26,7 @@ export async function discoverCatalog(params: DiscoveryParams) {
   const sort = legacySort.includes("vote_average") ? "rating" : legacySort.includes("release_date") || legacySort.includes("air_date") || legacySort === "newest" ? "newest" : "popularity";
   const common: Record<string, string | undefined> = {
     with_genres: kdrama ? "18" : params.genre,
-    without_genres: kdrama ? "16" : undefined,
+    without_genres: kdrama || hideAnimation ? "16" : undefined,
     with_origin_country: kdrama ? "KR" : params.country,
     with_original_language: kdrama ? "ko" : undefined,
     "vote_average.gte": params.rating,
@@ -42,12 +43,12 @@ export async function discoverCatalog(params: DiscoveryParams) {
     "first_air_date.lte": kind === "show" ? dateTo : undefined
   });
   if (invalidRange) return { format, invalidRange, items: [] as MediaSummary[], page: 1, totalPages: 1 };
-  if (format !== "all") return { format, invalidRange, ...(await discover(format, optionsFor(format))) };
+  if (format !== "all") { const data = await discover(format, optionsFor(format)); return { format, invalidRange, ...data, items: hideAnimation ? data.items.filter(item => !item.genres.some(genre => Number(genre.id) === 16)) : data.items }; }
   const [movies, shows] = await Promise.all([discover("movie", optionsFor("movie")), discover("show", optionsFor("show"))]);
-  const items = sortItems([...movies.items, ...shows.items], sort);
+  const items = sortItems([...movies.items, ...shows.items].filter(item => !hideAnimation || !item.genres.some(genre => Number(genre.id) === 16)), sort);
   return { format, invalidRange, items, page: Math.max(movies.page, shows.page), totalPages: Math.max(movies.totalPages, shows.totalPages) };
 }
 
 export function discoveryApiFilters(params: DiscoveryParams) {
-  return Object.fromEntries(["genre", "country", "rating", "sort", "yearMode", "year", "fromYear", "toYear"].map(key => [key, params[key]]).filter((entry): entry is [string, string] => Boolean(entry[1])));
+  return Object.fromEntries(["genre", "country", "rating", "sort", "yearMode", "year", "fromYear", "toYear", "hideAnimation"].map(key => [key, params[key]]).filter((entry): entry is [string, string] => Boolean(entry[1])));
 }

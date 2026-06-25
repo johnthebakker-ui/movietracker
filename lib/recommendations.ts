@@ -6,7 +6,7 @@ import type { MediaKind, MediaSummary } from "@/lib/types";
 
 type DbMedia = { id?: number; tmdb_id: number; kind: MediaKind; title: string };
 type Signal = { media: DbMedia; weight: number; reason: string };
-export type RecommendationFilters = { kind?: string; genre?: string; country?: string; year?: string; hideWatched?: boolean; hideListed?: boolean };
+export type RecommendationFilters = { kind?: string; genre?: string; country?: string; year?: string; hideWatched?: boolean; hideListed?: boolean; hideAnimation?: boolean; shuffle?: string };
 export type RecommendationEntry = { item: MediaSummary; reason: string };
 export type RecommendationPage = { items: RecommendationEntry[]; nextCursor: string | null; total: number };
 const kdramaPoolMarker = "kdrama-taste-pool-v2";
@@ -86,7 +86,7 @@ export async function recommendationPage(supabase: any, userId: string, filters:
     supabase.from("recommendation_dismissals").select("media_id").eq("user_id", userId)
   ]);
   const watched = new Set([...(watches.data ?? []), ...(completed.data ?? [])].map((row: any) => row.media_id)); const dismissed = new Set((dismissals.data ?? []).map((row: any) => row.media_id)); const listIds = (lists.data ?? []).map((row: any) => row.id); const listedRows = filters.hideListed && listIds.length ? (await supabase.from("list_items").select("media_id").in("list_id", listIds)).data ?? [] : []; const listed = new Set(listedRows.map((row: any) => row.media_id));
-  let filtered = (recommendations.data ?? []).map((row: any) => ({ ...row, media: Array.isArray(row.media) ? row.media[0] : row.media })).filter((row: any) => { const genres = row.media?.genres ?? []; const countries = row.media?.origin_countries ?? []; const isKdrama = row.media?.kind === "show" && row.media?.original_language === "ko" && countries.includes("KR") && genres.some((genre: any) => Number(genre.id) === 18) && !genres.some((genre: any) => Number(genre.id) === 16); return row.media && row.media.poster_path && !dismissed.has(row.media.id) && (!filters.kind || row.media.kind === filters.kind) && (!filters.country || countries.includes(filters.country)) && (!filters.year || row.media.release_date?.startsWith(filters.year)) && (!filters.genre || (filters.genre === "kdrama" ? isKdrama : genres.some((genre: any) => String(genre.id) === filters.genre))) && (!filters.hideWatched || !watched.has(row.media.id)) && (!filters.hideListed || !listed.has(row.media.id)); });
+  let filtered = (recommendations.data ?? []).map((row: any) => ({ ...row, media: Array.isArray(row.media) ? row.media[0] : row.media })).filter((row: any) => { const genres = row.media?.genres ?? []; const countries = row.media?.origin_countries ?? []; const isAnimation = genres.some((genre: any) => Number(genre.id) === 16); const isKdrama = row.media?.kind === "show" && row.media?.original_language === "ko" && countries.includes("KR") && genres.some((genre: any) => Number(genre.id) === 18) && !isAnimation; return row.media && row.media.poster_path && !dismissed.has(row.media.id) && (!filters.hideAnimation || !isAnimation) && (!filters.kind || row.media.kind === filters.kind) && (!filters.country || countries.includes(filters.country)) && (!filters.year || row.media.release_date?.startsWith(filters.year)) && (!filters.genre || (filters.genre === "kdrama" ? isKdrama : genres.some((genre: any) => String(genre.id) === filters.genre))) && (!filters.hideWatched || !watched.has(row.media.id)) && (!filters.hideListed || !listed.has(row.media.id)); });
   if (filters.genre === "kdrama") {
     const affinities = await kdramaTasteProfile(supabase, userId);
     filtered = filtered.map((row: any) => {
@@ -96,6 +96,10 @@ export async function recommendationPage(supabase: any, userId: string, filters:
     }).sort((a: any, b: any) => b.kdramaTasteScore - a.kdramaTasteScore || Number(b.score) - Number(a.score));
     const rotationWindowSize = Math.min(72, filtered.length); const rotationSeed = filtered[0]?.generated_at ?? "kdrama";
     filtered = [...filtered.slice(0, rotationWindowSize).sort((a: any, b: any) => rotationValue(rotationSeed, a.media.id) - rotationValue(rotationSeed, b.media.id)), ...filtered.slice(rotationWindowSize)];
+  }
+  if (filters.shuffle) {
+    const shuffleWindowSize = Math.min(filters.genre === "kdrama" ? 72 : 96, filtered.length);
+    filtered = [...filtered.slice(0, shuffleWindowSize).sort((a: any, b: any) => rotationValue(filters.shuffle!, a.media.id) - rotationValue(filters.shuffle!, b.media.id)), ...filtered.slice(shuffleWindowSize)];
   }
   const selectedRows = filtered.slice(offset, offset + size); const selectedItems: MediaSummary[] = selectedRows.map((row: any) => fromDbMedia(row.media));
   const showsMissingRun = selectedItems.filter(item => item.kind === "show" && (!item.status || (["Ended", "Canceled", "Cancelled"].includes(item.status) && !item.endDate)));

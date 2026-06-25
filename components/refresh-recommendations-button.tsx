@@ -14,7 +14,9 @@ export function RefreshRecommendationsButton() {
       const response = await fetch("/api/recommendations/refresh", { method: "POST" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? "Could not refresh recommendations");
-      window.location.reload();
+      const next = new URL(window.location.href);
+      next.searchParams.set("shuffle", String(Date.now()));
+      window.location.assign(next.toString());
     } catch (reason) {
       setPending(false);
       setError(reason instanceof Error ? reason.message : "Could not refresh recommendations");

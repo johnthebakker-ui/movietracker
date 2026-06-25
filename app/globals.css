@@ -124,6 +124,7 @@ img { max-width: 100%; }
 .year-mode input { position: absolute; opacity: 0; }
 .year-input { width: 110px; border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; color: var(--text); background: var(--surface-2); }
 .year-filter-row .button { margin-left: auto; }
+.discovery-animation-toggle { min-height: 38px; font-size: .72rem; }
 .infinite-sentinel { min-height: 100px; padding: 36px; display: grid; place-items: center; color: var(--muted); font-size: .75rem; }
 .interactive-card { position: relative; touch-action: pan-y; -webkit-tap-highlight-color: transparent; }
 .interactive-card, .interactive-card * { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; }
@@ -192,7 +193,7 @@ img { max-width: 100%; }
 .recommendation-dismiss:disabled { cursor: wait; opacity: .58; }
 .recommendation-filter-card .recommendation-filter-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
 .recommendation-year-row { display: grid; grid-template-columns: auto 120px minmax(320px,1fr) auto; }
-.recommendation-filter-toggles { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.recommendation-filter-toggles { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
 .recommendation-year-row .button { margin-left: 0; }
 .page-heading-row.recommendation-heading { align-items: end; }
 .recommendation-heading .page-title { margin-bottom: 0; }
