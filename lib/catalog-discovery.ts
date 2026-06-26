@@ -1,6 +1,6 @@
 import { discover } from "@/lib/tmdb";
 import type { MediaKind, MediaSummary } from "@/lib/types";
-import { ANIME_EXCLUDE_KEY, ANIMATION_GENRE_ID, matchesExcludedGenre, parseExcludedGenres } from "@/lib/genre-utils";
+import { ANIME_EXCLUDE_KEY, ANIMATION_GENRE_ID, SUPERHERO_GENRE_KEY, SUPERHERO_KEYWORD_ID, matchesExcludedGenre, parseExcludedGenres } from "@/lib/genre-utils";
 
 export type DiscoveryFormat = MediaKind | "all";
 export type DiscoveryParams = Record<string, string | undefined>;
@@ -15,11 +15,13 @@ function sortItems(items: MediaSummary[], sort: string) {
 
 export async function discoverCatalog(params: DiscoveryParams) {
   const kdrama = params.genre === "kdrama";
+  const superhero = params.genre === SUPERHERO_GENRE_KEY;
   const requestedFormat: DiscoveryFormat = params.kind === "movie" || params.kind === "show" ? params.kind : "all";
   const format: DiscoveryFormat = kdrama ? "show" : requestedFormat;
   const excludedGenres = parseExcludedGenres(params.excludeGenres);
   if (params.hideAnimation === "1" && !excludedGenres.includes(String(ANIMATION_GENRE_ID))) excludedGenres.push(String(ANIMATION_GENRE_ID));
-  const tmdbExcludedGenres = excludedGenres.filter(value => value !== ANIME_EXCLUDE_KEY && value !== String(ANIMATION_GENRE_ID)).join(",");
+  const tmdbExcludedGenres = excludedGenres.filter(value => value !== ANIME_EXCLUDE_KEY && value !== String(ANIMATION_GENRE_ID) && value !== SUPERHERO_GENRE_KEY).join(",");
+  const excludingSuperhero = excludedGenres.includes(SUPERHERO_GENRE_KEY) && !superhero;
   const yearMode = params.yearMode === "range" ? "range" : "exact";
   const exactYear = validYear(params.year); const fromYear = validYear(params.fromYear); const toYear = validYear(params.toYear);
   const invalidRange = yearMode === "range" && fromYear !== null && toYear !== null && fromYear > toYear;
@@ -28,7 +30,9 @@ export async function discoverCatalog(params: DiscoveryParams) {
   const legacySort = params.sort ?? "popularity.desc";
   const sort = legacySort.includes("vote_average") ? "rating" : legacySort.includes("release_date") || legacySort.includes("air_date") || legacySort === "newest" ? "newest" : "popularity";
   const common: Record<string, string | undefined> = {
-    with_genres: kdrama ? "18" : params.genre,
+    with_genres: kdrama || superhero ? kdrama ? "18" : undefined : params.genre,
+    with_keywords: superhero ? SUPERHERO_KEYWORD_ID : undefined,
+    without_keywords: excludingSuperhero ? SUPERHERO_KEYWORD_ID : undefined,
     without_genres: kdrama ? "16" : tmdbExcludedGenres || undefined,
     with_origin_country: kdrama ? "KR" : params.country,
     with_original_language: kdrama ? "ko" : undefined,

@@ -24,6 +24,7 @@ export interface MediaSummary {
   voteCount: number;
   communityRating?: number | null;
   communityRatingCount?: number;
+  userRating?: number | null;
   popularity: number;
   genres: Genre[];
   originalLanguage?: string | null;

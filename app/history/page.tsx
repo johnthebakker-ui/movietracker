@@ -16,6 +16,9 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
   if (!supabase || !user) redirect("/login");
   const { data } = await supabase.from("watch_events").select("id,watched_at,duration_minutes,episode_id,media(id,tmdb_id,kind,title,poster_path,backdrop_path,runtime),episodes(name,episode_number,still_path,seasons(season_number,name))").eq("user_id", user.id).order("watched_at", { ascending: false, nullsFirst: false }).limit(500);
   const allEvents: any[] = [...(data ?? [])];
+  const mediaIds = [...new Set(allEvents.map((event: any) => event.media?.id).filter(Boolean))];
+  const { data: ratingRows } = mediaIds.length ? await supabase.from("ratings").select("media_id,score").eq("user_id", user.id).in("media_id", mediaIds) : { data: [] as any[] };
+  const ratingByMediaId = new Map((ratingRows ?? []).map((row: any) => [row.media_id, Number(row.score)]));
   allEvents.sort((a, b) => b.watched_at && a.watched_at ? new Date(b.watched_at).getTime() - new Date(a.watched_at).getTime() : b.watched_at ? 1 : a.watched_at ? -1 : 0);
   const events = allEvents.filter(event => filter === "all" || (filter === "episodes" ? Boolean(event.episode_id) : !event.episode_id));
   const grouped = new Map<string, typeof events>();
@@ -35,8 +38,9 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
         const episode = event.episodes; const media = event.media; const season = Array.isArray(episode?.seasons) ? episode.seasons[0] : episode?.seasons;
         const key = event.episode_id ? `episode-${event.episode_id}` : `media-${media?.tmdb_id}`; const watchNumber = remaining.get(key) ?? 1; remaining.set(key, watchNumber - 1);
         const artwork = imageUrl(episode?.still_path ?? media?.backdrop_path ?? media?.poster_path, "w500");
+        const rating = media?.id ? ratingByMediaId.get(media.id) : null;
         return <div className="history-event" key={event.id}><Link className="history-event-link" href={`/title/${media?.kind}/${media?.tmdb_id}${episode ? `/season/${season?.season_number}/episode/${episode.episode_number}` : ""}`}>
-          <div className="history-art">{artwork ? <Image src={artwork} alt="" fill sizes="140px" /> : <div />}</div>
+          <div className="history-art">{artwork ? <Image src={artwork} alt="" fill sizes="140px" /> : <div />}{rating != null && <b className="history-rating-badge">{rating.toFixed(1)}<small>/10</small></b>}</div>
           <div className="history-event-copy"><span className="eyebrow">{episode ? `S${season?.season_number ?? "?"} E${episode.episode_number}` : media?.kind === "show" ? "Series" : "Film"}</span><strong>{media?.title}</strong>{episode && <span>{episode.name}</span>}</div>
           </Link><div className="history-event-meta">{(occurrenceTotals.get(key) ?? 0) > 1 && <span><RotateCcw size={13} /> Rewatch {watchNumber}</span>}<time>{event.watched_at ? new Date(event.watched_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Date unknown"}</time>{media?.kind === "show" ? <Tv size={15} /> : <Film size={15} />}<DeleteWatchEventForm eventId={event.id} title={media?.title ?? "title"} /></div>
         </div>;

@@ -4,10 +4,20 @@ import { ReviewComposer } from "@/components/review-composer";
 import { ReviewCard } from "@/components/review-card";
 import type { ExternalRating } from "@/lib/external-ratings";
 
-type Review = { id: string; title: string | null; body: string; contains_spoilers: boolean; created_at: string; profiles?: { username?: string; display_name?: string | null; avatar_url?: string | null } | null; ratings?: { score?: number | string } | { score?: number | string }[] | null };
-type Props = { targetType: "season" | "episode"; targetId: number; path: string; signedIn: boolean; rating?: number | null; userRating?: number | null; reviews: Review[]; sources?: ExternalRating[] };
+type Review = {
+  id: string;
+  user_id?: string | null;
+  title: string | null;
+  body: string;
+  contains_spoilers: boolean;
+  created_at: string;
+  updated_at?: string | null;
+  profiles?: { username?: string; display_name?: string | null; avatar_url?: string | null } | null;
+  ratings?: { score?: number | string } | { score?: number | string }[] | null;
+};
+type Props = { targetType: "season" | "episode"; targetId: number; path: string; signedIn: boolean; rating?: number | null; userRating?: number | null; reviews: Review[]; sources?: ExternalRating[]; currentUserId?: string };
 
-export function TargetRatingBar({ targetType, targetId, path, signedIn, rating, userRating, sources = [] }: Omit<Props, "reviews">) {
+export function TargetRatingBar({ targetType, targetId, path, signedIn, rating, userRating, sources = [] }: Omit<Props, "reviews" | "currentUserId">) {
   return <section className="target-rating-strip">
     <div className="target-rating-sources">
       <div><span className="eyebrow">MovieTracker community</span><strong>{rating ? Number(rating).toFixed(1) : "—"}<small>/ 10</small></strong></div>
@@ -20,8 +30,12 @@ export function TargetRatingBar({ targetType, targetId, path, signedIn, rating, 
   </section>;
 }
 
-export function TargetReviewSections({ targetType, targetId, path, signedIn, userRating, reviews }: Omit<Props, "rating" | "sources">) {
-  return <>{signedIn && <section className="section compact-section review-section"><div className="section-head"><div><div className="eyebrow">Your take</div><h2 className="display">Review this {targetType}</h2></div><p>Your review uses the same rating shown above.</p></div><ReviewComposer targetType={targetType} targetId={targetId} path={path} currentRating={userRating} /></section>}{reviews.length > 0 && <section className="section compact-section"><div className="section-head"><div><div className="eyebrow">Viewer notes</div><h2 className="display">Reviews</h2></div></div><div className="review-grid">{reviews.map(review => <ReviewCard review={review} key={review.id} />)}</div></section>}</>;
+export function TargetReviewSections({ targetType, targetId, path, signedIn, userRating, reviews, currentUserId }: Omit<Props, "rating" | "sources">) {
+  const existingReview = currentUserId ? reviews.find(review => review.user_id === currentUserId) : null;
+  return <>
+    {signedIn && <section className="section compact-section review-section"><div className="section-head"><div><div className="eyebrow">Your take</div><h2 className="display">{existingReview ? "Edit your review" : `Review this ${targetType}`}</h2></div><p>Your review uses the same rating shown above.</p></div><ReviewComposer targetType={targetType} targetId={targetId} path={path} currentRating={userRating} existingReview={existingReview} /></section>}
+    {reviews.length > 0 && <section className="section compact-section"><div className="section-head"><div><div className="eyebrow">Viewer notes</div><h2 className="display">Reviews</h2></div></div><div className="review-grid">{reviews.map(review => <ReviewCard review={review} key={review.id} />)}</div></section>}
+  </>;
 }
 
 export function TargetFeedback(props: Props) { return <><TargetRatingBar {...props} /><TargetReviewSections {...props} /></>; }

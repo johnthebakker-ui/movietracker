@@ -24,7 +24,7 @@ export default async function SeasonPage({ params }: { params: Promise<{ kind: s
   if (supabase && seasonId) {
     const [{ data: episodes }, { data: reviewRows }, { data: ratingRows }] = await Promise.all([
       supabase.from("episodes").select("id,tmdb_id").eq("season_id", seasonId),
-      supabase.from("reviews").select("id,title,body,contains_spoilers,created_at,rating_id,profiles(username,display_name,avatar_url),ratings(score)").eq("season_id", seasonId).order("created_at", { ascending: false }).limit(20),
+      supabase.from("reviews").select("id,user_id,title,body,contains_spoilers,created_at,updated_at,rating_id,profiles(username,display_name,avatar_url),ratings(score)").eq("season_id", seasonId).order("created_at", { ascending: false }).limit(20),
       supabase.from("ratings").select("score,user_id").eq("season_id", seasonId)
     ]);
     episodeMap = new Map((episodes ?? []).map(episode => [episode.tmdb_id, episode.id])); reviews = reviewRows ?? [];
@@ -45,6 +45,6 @@ export default async function SeasonPage({ params }: { params: Promise<{ kind: s
       const throughIds = through.split(",").map(Number).filter(Boolean); const throughDates = Object.fromEntries(season.episodes.slice(0, index + 1).map(item => [String(episodeMap.get(item.id) ?? ""), item.airDate]).filter(([key]) => key));
       return <article className="episode" id={`episode-${episode.episodeNumber}`} key={episode.id}><Link className="episode-main-link" href={episodeHref}>{episode.stillPath ? <Image className="episode-still" src={imageUrl(episode.stillPath, "w500")!} alt="" width={440} height={248} /> : <div className="episode-still" />}<div><div className="eyebrow">Episode {episode.episodeNumber}</div><h3>{episode.name}</h3><p className="overview">{episode.overview || "No description has been released yet."}</p><div className="muted episode-meta">{episode.airDate ?? "Air date TBA"} · {episode.runtime ? `${episode.runtime} min` : "Runtime TBA"} {episode.voteAverage > 0 && <>· ★ {episode.voteAverage.toFixed(1)}</>}</div></div><ChevronRight className="episode-chevron" /></Link>{user && mediaId && dbId ? <div className="episode-watch-actions"><WatchLogForm mediaId={mediaId} episodeId={dbId} releaseDate={episode.airDate} path={path} watched={isWatched} /><BulkWatchLogForm mediaId={mediaId} episodeIds={throughIds} episodeDates={throughDates} path={path} label="Watch through here" scope="season" /></div> : <Link className="button ghost" href="/login">Sign in to track</Link>}</article>;
     })}</div></section>
-    {seasonId && <TargetReviewSections targetType="season" targetId={seasonId} path={path} signedIn={Boolean(user)} userRating={userRating} reviews={reviews} />}
+    {seasonId && <TargetReviewSections targetType="season" targetId={seasonId} path={path} signedIn={Boolean(user)} userRating={userRating} reviews={reviews} currentUserId={user?.id} />}
   </div></main>;
 }

@@ -3,11 +3,12 @@
 import { CalendarDays, Clapperboard, Globe2, SlidersHorizontal } from "lucide-react";
 import { ChoiceMenu, countryChoices, ExcludeGenreMenu } from "@/components/discovery-filters";
 import type { Genre } from "@/lib/types";
+import { SUPERHERO_GENRE_KEY } from "@/lib/genre-utils";
 
 type Params = { kind?: string; genre?: string; country?: string; year?: string; hideWatched?: string; hideListed?: string; hideAnimation?: string; excludeGenres?: string; shuffle?: string };
 
 export function RecommendationFilters({ genres, params }: { genres: Genre[]; params: Params }) {
-  const genreChoices = [...genres.map(genre => ({ value: String(genre.id), label: genre.name })), { value: "kdrama", label: "K-Drama" }].sort((a, b) => a.label.localeCompare(b.label));
+  const genreChoices = [...genres.map(genre => ({ value: String(genre.id), label: genre.name })), { value: "kdrama", label: "K-Drama" }, { value: SUPERHERO_GENRE_KEY, label: "Superhero" }].sort((a, b) => a.label.localeCompare(b.label));
   return <form className="discovery-filter-card recommendation-filter-card">
     <div className="discovery-filter-grid recommendation-filter-grid">
       <ChoiceMenu label="Format" icon={<Clapperboard size={17} />} name="kind" value={params.kind ?? ""} choices={[{ value: "", label: "Movies & series" }, { value: "movie", label: "Movies" }, { value: "show", label: "Series" }]} />

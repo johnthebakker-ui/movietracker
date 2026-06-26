@@ -195,8 +195,12 @@ export async function writeReview(form: FormData) {
     if (rating) { const result = await supabase.from("ratings").update({ score: values.score, updated_at: new Date().toISOString() }).eq("id", rating.id).select("id,score").single(); rating = result.data; if (result.error) throw result.error; }
     else { const result = await supabase.from("ratings").insert({ user_id: user.id, media_id: values.mediaId, score: values.score }).select("id,score").single(); rating = result.data; if (result.error) throw result.error; }
   }
-  const { error } = await supabase.from("reviews").insert({ user_id: user.id, media_id: values.mediaId, rating_id: rating?.id ?? null, title: values.title || null, body: values.body, contains_spoilers: values.spoilers === "on" });
-  if (error) throw error;
+  const reviewPayload = { rating_id: rating?.id ?? null, title: values.title || null, body: values.body, contains_spoilers: values.spoilers === "on", updated_at: new Date().toISOString() };
+  const { data: existingReview } = await supabase.from("reviews").select("id").eq("user_id", user.id).eq("media_id", values.mediaId).maybeSingle();
+  const reviewResult = existingReview
+    ? await supabase.from("reviews").update(reviewPayload).eq("id", existingReview.id)
+    : await supabase.from("reviews").insert({ user_id: user.id, media_id: values.mediaId, ...reviewPayload });
+  if (reviewResult.error) throw reviewResult.error;
   if (values.score !== undefined) { try { const { data: media } = await supabase.from("media").select("tmdb_id,kind").eq("id", values.mediaId).single(); if (media) { await pushTraktRating(user.id, { kind: media.kind, tmdbId: media.tmdb_id, score: values.score }); if (rating?.id) await supabase.from("ratings").update({ updated_at: new Date().toISOString() }).eq("id", rating.id); } } catch (error) { console.error("Trakt review rating push failed", error); } }
   revalidatePath(values.path);
 }
@@ -223,8 +227,12 @@ export async function writeTargetReview(form: FormData) {
     if (rating) { const result = await supabase.from("ratings").update({ score: values.score, updated_at: new Date().toISOString() }).eq("id", rating.id).select("id,score").single(); rating = result.data; if (result.error) throw result.error; }
     else { const result = await supabase.from("ratings").insert({ user_id: user.id, [column]: values.targetId, score: values.score }).select("id,score").single(); rating = result.data; if (result.error) throw result.error; }
   }
-  const { error } = await supabase.from("reviews").insert({ user_id: user.id, [column]: values.targetId, rating_id: rating?.id ?? null, title: values.title || null, body: values.body, contains_spoilers: values.spoilers === "on" });
-  if (error) throw error;
+  const reviewPayload = { rating_id: rating?.id ?? null, title: values.title || null, body: values.body, contains_spoilers: values.spoilers === "on", updated_at: new Date().toISOString() };
+  const { data: existingReview } = await supabase.from("reviews").select("id").eq("user_id", user.id).eq(column, values.targetId).maybeSingle();
+  const reviewResult = existingReview
+    ? await supabase.from("reviews").update(reviewPayload).eq("id", existingReview.id)
+    : await supabase.from("reviews").insert({ user_id: user.id, [column]: values.targetId, ...reviewPayload });
+  if (reviewResult.error) throw reviewResult.error;
   revalidatePath(values.path);
 }
 

@@ -4,7 +4,7 @@ import { Ban, CalendarDays, Check, ChevronDown, Clapperboard, Film, Gauge, Globe
 import type { Genre } from "@/lib/types";
 import type { DiscoveryFormat } from "@/lib/catalog-discovery";
 import { useEffect, useId, useRef, useState } from "react";
-import { ANIME_EXCLUDE_KEY, ANIMATION_GENRE_ID, parseExcludedGenres } from "@/lib/genre-utils";
+import { ANIME_EXCLUDE_KEY, ANIMATION_GENRE_ID, SUPERHERO_GENRE_KEY, parseExcludedGenres } from "@/lib/genre-utils";
 
 const filterMenuEvent = "movietracker:filter-menu-open";
 
@@ -20,6 +20,7 @@ export function ChoiceMenu({ label, icon, name, value, choices }: { label: strin
   const [selectedValue, setSelectedValue] = useState(value); const selected = choices.find(choice => choice.value === selectedValue)?.label ?? choices[0]?.label;
   const menuId = useId(); const detailsRef = useRef<HTMLDetailsElement>(null);
   useEffect(() => { const closeOther = (event: Event) => { if ((event as CustomEvent<string>).detail !== menuId && detailsRef.current) detailsRef.current.open = false; }; window.addEventListener(filterMenuEvent, closeOther); return () => window.removeEventListener(filterMenuEvent, closeOther); }, [menuId]);
+  useEffect(() => { const closeOutside = (event: PointerEvent) => { if (detailsRef.current?.open && !detailsRef.current.contains(event.target as Node)) detailsRef.current.open = false; }; document.addEventListener("pointerdown", closeOutside); return () => document.removeEventListener("pointerdown", closeOutside); }, []);
   return <details ref={detailsRef} className="filter-popover" onToggle={() => { if (detailsRef.current?.open) window.dispatchEvent(new CustomEvent(filterMenuEvent, { detail: menuId })); }}><summary><span className="filter-summary-icon">{icon}</span><span><small>{label}</small><strong>{selected}</strong></span><ChevronDown size={15} /></summary><div className="filter-menu" role="group" aria-label={label}><div className="filter-sheet-heading" aria-hidden="true"><span /><strong>{label}</strong></div>{choices.map(choice => <label className={`filter-option${choice.value === selectedValue ? " selected" : ""}`} key={choice.value}><input type="radio" name={name} value={choice.value} checked={choice.value === selectedValue} onChange={() => { setSelectedValue(choice.value); if (detailsRef.current) detailsRef.current.open = false; }} /><span>{choice.label}</span><span className="filter-option-check">{choice.value === selectedValue && <Check size={16} />}</span></label>)}</div></details>;
 }
 
@@ -31,9 +32,11 @@ export function ExcludeGenreMenu({ genres, value, legacyHideAnimation }: { genre
   });
   const menuId = useId(); const detailsRef = useRef<HTMLDetailsElement>(null);
   useEffect(() => { const closeOther = (event: Event) => { if ((event as CustomEvent<string>).detail !== menuId && detailsRef.current) detailsRef.current.open = false; }; window.addEventListener(filterMenuEvent, closeOther); return () => window.removeEventListener(filterMenuEvent, closeOther); }, [menuId]);
+  useEffect(() => { const closeOutside = (event: PointerEvent) => { if (detailsRef.current?.open && !detailsRef.current.contains(event.target as Node)) detailsRef.current.open = false; }; document.addEventListener("pointerdown", closeOutside); return () => document.removeEventListener("pointerdown", closeOutside); }, []);
   const choices = [
     { value: ANIME_EXCLUDE_KEY, label: "Anime" },
     { value: String(ANIMATION_GENRE_ID), label: "Animation / cartoons" },
+    { value: SUPERHERO_GENRE_KEY, label: "Superhero" },
     ...genres.filter(genre => Number(genre.id) !== ANIMATION_GENRE_ID).map(genre => ({ value: String(genre.id), label: genre.name }))
   ].sort((a, b) => a.label.localeCompare(b.label));
   const toggle = (value: string) => setSelected(current => current.includes(value) ? current.filter(item => item !== value) : [...current, value]);
@@ -43,18 +46,18 @@ export function ExcludeGenreMenu({ genres, value, legacyHideAnimation }: { genre
     <summary><span className="filter-summary-icon"><Ban size={17} /></span><span><small>Exclude</small><strong>{label}</strong></span><ChevronDown size={15} /></summary>
     <div className="filter-menu exclude-genre-menu" role="group" aria-label="Exclude genres">
       <div className="filter-sheet-heading" aria-hidden="true"><span /><strong>Exclude genres</strong></div>
-      {selected.length ? <button className="exclude-clear" type="button" onClick={() => setSelected([])}><X size={14} /> Clear excluded genres</button> : null}
-      {choices.map(choice => <label className={`filter-option${selected.includes(choice.value) ? " selected" : ""}`} key={choice.value}>
-        <input type="checkbox" value={choice.value} checked={selected.includes(choice.value)} onChange={() => toggle(choice.value)} />
-        <span>{choice.label}</span><span className="filter-option-check">{selected.includes(choice.value) && <Check size={16} />}</span>
-      </label>)}
+      <div className="exclude-options">{choices.map(choice => <label className={`filter-option${selected.includes(choice.value) ? " selected" : ""}`} key={choice.value}>
+          <input type="checkbox" value={choice.value} checked={selected.includes(choice.value)} onChange={() => toggle(choice.value)} />
+          <span>{choice.label}</span><span className="filter-option-check">{selected.includes(choice.value) && <Check size={16} />}</span>
+        </label>)}</div>
+      <div className="exclude-clear-footer"><button className="exclude-clear" type="button" disabled={!selected.length} onClick={() => setSelected([])}><X size={14} /> Clear excluded genres</button></div>
     </div>
   </details>;
 }
 
 export function DiscoveryFilters({ kind, genres, params }: { kind: DiscoveryFormat; genres: Genre[]; params: Record<string, string | undefined> }) {
   const [yearMode, setYearMode] = useState(params.yearMode === "range" ? "range" : "exact");
-  const genreChoices = [...genres.map(g => ({ value: String(g.id), label: g.name })), { value: "kdrama", label: "K-Drama" }].sort((a, b) => a.label.localeCompare(b.label));
+  const genreChoices = [...genres.map(g => ({ value: String(g.id), label: g.name })), { value: "kdrama", label: "K-Drama" }, { value: SUPERHERO_GENRE_KEY, label: "Superhero" }].sort((a, b) => a.label.localeCompare(b.label));
   const formatIcon = kind === "movie" ? <Film size={17} /> : kind === "show" ? <Tv size={17} /> : <Clapperboard size={17} />;
   const normalizedSort = params.sort?.includes("vote_average") ? "rating" : params.sort?.includes("release_date") || params.sort?.includes("air_date") ? "newest" : params.sort ?? "popularity";
   return <form className="discovery-filter-card">
