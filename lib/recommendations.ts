@@ -3,10 +3,11 @@ import { fromDbMedia } from "@/lib/db-mappers";
 import { discover, getMedia, getTrending } from "@/lib/tmdb";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import type { MediaKind, MediaSummary } from "@/lib/types";
+import { ANIMATION_GENRE_ID, matchesExcludedGenre, parseExcludedGenres } from "@/lib/genre-utils";
 
 type DbMedia = { id?: number; tmdb_id: number; kind: MediaKind; title: string };
 type Signal = { media: DbMedia; weight: number; reason: string };
-export type RecommendationFilters = { kind?: string; genre?: string; country?: string; year?: string; hideWatched?: boolean; hideListed?: boolean; hideAnimation?: boolean; shuffle?: string };
+export type RecommendationFilters = { kind?: string; genre?: string; country?: string; year?: string; hideWatched?: boolean; hideListed?: boolean; hideAnimation?: boolean; excludeGenres?: string; shuffle?: string };
 export type RecommendationEntry = { item: MediaSummary; reason: string };
 export type RecommendationPage = { items: RecommendationEntry[]; nextCursor: string | null; total: number };
 const kdramaPoolMarker = "kdrama-taste-pool-v2";
@@ -86,7 +87,9 @@ export async function recommendationPage(supabase: any, userId: string, filters:
     supabase.from("recommendation_dismissals").select("media_id").eq("user_id", userId)
   ]);
   const watched = new Set([...(watches.data ?? []), ...(completed.data ?? [])].map((row: any) => row.media_id)); const dismissed = new Set((dismissals.data ?? []).map((row: any) => row.media_id)); const listIds = (lists.data ?? []).map((row: any) => row.id); const listedRows = filters.hideListed && listIds.length ? (await supabase.from("list_items").select("media_id").in("list_id", listIds)).data ?? [] : []; const listed = new Set(listedRows.map((row: any) => row.media_id));
-  let filtered = (recommendations.data ?? []).map((row: any) => ({ ...row, media: Array.isArray(row.media) ? row.media[0] : row.media })).filter((row: any) => { const genres = row.media?.genres ?? []; const countries = row.media?.origin_countries ?? []; const isAnimation = genres.some((genre: any) => Number(genre.id) === 16); const isKdrama = row.media?.kind === "show" && row.media?.original_language === "ko" && countries.includes("KR") && genres.some((genre: any) => Number(genre.id) === 18) && !isAnimation; return row.media && row.media.poster_path && !dismissed.has(row.media.id) && (!filters.hideAnimation || !isAnimation) && (!filters.kind || row.media.kind === filters.kind) && (!filters.country || countries.includes(filters.country)) && (!filters.year || row.media.release_date?.startsWith(filters.year)) && (!filters.genre || (filters.genre === "kdrama" ? isKdrama : genres.some((genre: any) => String(genre.id) === filters.genre))) && (!filters.hideWatched || !watched.has(row.media.id)) && (!filters.hideListed || !listed.has(row.media.id)); });
+  const excludedGenres = parseExcludedGenres(filters.excludeGenres);
+  if (filters.hideAnimation && !excludedGenres.includes(String(ANIMATION_GENRE_ID))) excludedGenres.push(String(ANIMATION_GENRE_ID));
+  let filtered = (recommendations.data ?? []).map((row: any) => ({ ...row, media: Array.isArray(row.media) ? row.media[0] : row.media })).filter((row: any) => { const genres = row.media?.genres ?? []; const countries = row.media?.origin_countries ?? []; const isAnimation = genres.some((genre: any) => Number(genre.id) === 16); const isKdrama = row.media?.kind === "show" && row.media?.original_language === "ko" && countries.includes("KR") && genres.some((genre: any) => Number(genre.id) === 18) && !isAnimation; return row.media && row.media.poster_path && !dismissed.has(row.media.id) && !matchesExcludedGenre(row.media, excludedGenres) && (!filters.kind || row.media.kind === filters.kind) && (!filters.country || countries.includes(filters.country)) && (!filters.year || row.media.release_date?.startsWith(filters.year)) && (!filters.genre || (filters.genre === "kdrama" ? isKdrama : genres.some((genre: any) => String(genre.id) === filters.genre))) && (!filters.hideWatched || !watched.has(row.media.id)) && (!filters.hideListed || !listed.has(row.media.id)); });
   if (filters.genre === "kdrama") {
     const affinities = await kdramaTasteProfile(supabase, userId);
     filtered = filtered.map((row: any) => {

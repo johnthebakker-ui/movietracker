@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { normalizeGenreNamesForStats } from "@/lib/genre-utils";
 
 const statusOrder = ["completed", "watching", "planned", "paused", "dropped"] as const;
 type Status = typeof statusOrder[number];
@@ -23,9 +24,7 @@ export default async function StatsPage() {
   for (const row of progressRows as any[]) {
     const status = statusOrder.includes(row.status as Status) ? row.status as Status : "planned";
     const media = Array.isArray(row.media) ? row.media[0] : row.media;
-    for (const genre of media?.genres ?? []) {
-      const name = typeof genre === "string" ? genre : genre?.name;
-      if (!name) continue;
+    for (const name of normalizeGenreNamesForStats(media)) {
       const entry = genreMap.get(name) ?? { name, total: 0, statuses: { completed: 0, watching: 0, planned: 0, paused: 0, dropped: 0 } };
       entry.total += 1;
       entry.statuses[status] += 1;
