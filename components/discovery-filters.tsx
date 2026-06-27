@@ -46,11 +46,21 @@ export function ExcludeGenreMenu({ genres, value, legacyHideAnimation }: { genre
     <summary><span className="filter-summary-icon"><Ban size={17} /></span><span><small>Exclude</small><strong>{label}</strong></span><ChevronDown size={15} /></summary>
     <div className="filter-menu exclude-genre-menu" role="group" aria-label="Exclude genres">
       <div className="filter-sheet-heading" aria-hidden="true"><span /><strong>Exclude genres</strong></div>
-      <div className="exclude-options">{choices.map(choice => <label className={`filter-option${selected.includes(choice.value) ? " selected" : ""}`} key={choice.value}>
-          <input type="checkbox" value={choice.value} checked={selected.includes(choice.value)} onChange={() => toggle(choice.value)} />
-          <span>{choice.label}</span><span className="filter-option-check">{selected.includes(choice.value) && <Check size={16} />}</span>
-        </label>)}</div>
-      <div className="exclude-clear-footer"><button className="exclude-clear" type="button" disabled={!selected.length} onClick={() => setSelected([])}><X size={14} /> Clear excluded genres</button></div>
+      <div className="exclude-options">{choices.map(choice => {
+        const isSelected = selected.includes(choice.value);
+        return <button
+          className={`filter-option${isSelected ? " selected" : ""}`}
+          key={choice.value}
+          type="button"
+          role="checkbox"
+          aria-checked={isSelected}
+          onPointerDown={event => event.preventDefault()}
+          onClick={() => toggle(choice.value)}
+        >
+          <span>{choice.label}</span><span className="filter-option-check">{isSelected && <Check size={16} />}</span>
+        </button>;
+      })}</div>
+      <div className="exclude-clear-footer"><button className="exclude-clear" type="button" disabled={!selected.length} onPointerDown={event => event.preventDefault()} onClick={() => setSelected([])}><X size={14} /> Clear excluded genres</button></div>
     </div>
   </details>;
 }
