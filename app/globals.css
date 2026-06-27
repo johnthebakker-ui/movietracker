@@ -118,7 +118,7 @@ img { max-width: 100%; }
 .filter-option input { position: absolute; opacity: 0; pointer-events: none; }
 .filter-option-check { width: 18px; height: 18px; display: grid; place-items: center; }
 .filter-popover[open] { z-index: 35; }
-.exclude-genre-menu { width: max(280px, 100%); max-height: none; overflow: visible; display: block; }
+.exclude-genre-menu { width: 100%; max-height: none; overflow: visible; display: block; }
 .exclude-options { max-height: min(286px, 42vh); overflow-y: auto; overscroll-behavior: contain; padding-right: 3px; }
 .exclude-clear-footer { margin: 6px -7px -7px; padding: 7px; border-top: 1px solid var(--line); background: var(--surface); }
 .exclude-clear { width: 100%; min-height: 34px; border: 0; border-radius: 9px; color: var(--muted); background: var(--surface-2); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: .72rem; font-weight: 750; cursor: pointer; }
@@ -454,7 +454,7 @@ img { max-width: 100%; }
 .genre-stat-fill { height: 100%; display: flex; overflow: hidden; border-radius: inherit; }
 .genre-stat-fill span { height: 100%; background: var(--status-color); }
 .completed { --status-color: #35c986; }.watching { --status-color: #ff5a3d; }.planned { --status-color: #6f8cff; }.paused { --status-color: #e7b84b; }.dropped { --status-color: #9a7cad; }
-.genre-detail-section { padding-top: 44px; }
+.genre-detail-section { padding-top: 44px; scroll-margin-top: 96px; }
 .genre-detail-grid { margin-top: 18px; }
 .settings-layout { display: grid; grid-template-columns: 220px 1fr; gap: 34px; }
 .settings-nav { display: grid; align-content: start; gap: 5px; }
