@@ -36,13 +36,13 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
       <div className="history-date"><strong>{day === "unknown" ? "Unknown" : new Date(`${day}T12:00:00`).toLocaleDateString("en", { weekday: "short", day: "numeric" })}</strong><span>{day === "unknown" ? "Watched date not specified" : new Date(`${day}T12:00:00`).toLocaleDateString("en", { month: "long", year: "numeric" })}</span></div>
       <div className="history-event-list">{dayEvents.map((event: any) => {
         const episode = event.episodes; const media = event.media; const season = Array.isArray(episode?.seasons) ? episode.seasons[0] : episode?.seasons;
-        const key = event.episode_id ? `episode-${event.episode_id}` : `media-${media?.tmdb_id}`; const watchNumber = remaining.get(key) ?? 1; remaining.set(key, watchNumber - 1);
+        const key = event.episode_id ? `episode-${event.episode_id}` : `media-${media?.tmdb_id}`; const watchNumber = remaining.get(key) ?? 1; remaining.set(key, watchNumber - 1); const rewatchNumber = watchNumber - 1;
         const artwork = imageUrl(episode?.still_path ?? media?.backdrop_path ?? media?.poster_path, "w500");
         const rating = media?.id ? ratingByMediaId.get(media.id) : null;
         return <div className="history-event" key={event.id}><Link className="history-event-link" href={`/title/${media?.kind}/${media?.tmdb_id}${episode ? `/season/${season?.season_number}/episode/${episode.episode_number}` : ""}`}>
           <div className="history-art">{artwork ? <Image src={artwork} alt="" fill sizes="140px" /> : <div />}{rating != null && <b className="history-rating-badge">{rating.toFixed(1)}<small>/10</small></b>}</div>
           <div className="history-event-copy"><span className="eyebrow">{episode ? `S${season?.season_number ?? "?"} E${episode.episode_number}` : media?.kind === "show" ? "Series" : "Film"}</span><strong>{media?.title}</strong>{episode && <span>{episode.name}</span>}</div>
-          </Link><div className="history-event-meta">{(occurrenceTotals.get(key) ?? 0) > 1 && <span><RotateCcw size={13} /> Rewatch {watchNumber}</span>}<time>{event.watched_at ? new Date(event.watched_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Date unknown"}</time>{media?.kind === "show" ? <Tv size={15} /> : <Film size={15} />}<DeleteWatchEventForm eventId={event.id} title={media?.title ?? "title"} /></div>
+          </Link><div className="history-event-meta">{rewatchNumber > 0 && <span><RotateCcw size={13} /> Rewatch {rewatchNumber}</span>}<time>{event.watched_at ? new Date(event.watched_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Date unknown"}</time>{media?.kind === "show" ? <Tv size={15} /> : <Film size={15} />}<DeleteWatchEventForm eventId={event.id} title={media?.title ?? "title"} /></div>
         </div>;
       })}</div>
     </section>)}</div> : <div className="empty-state"><HistoryIcon size={28} /><h2 className="display">Your diary starts with a watch</h2><p className="muted">Log a movie or episode and its exact date will appear here.</p><Link className="button accent" href="/discover">Find something to watch</Link></div>}

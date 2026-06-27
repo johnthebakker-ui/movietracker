@@ -1,15 +1,18 @@
 import Image from "@/components/app-image";
 import Link from "next/link";
-import { CalendarDays, CheckCircle2, Film, Flame, Gauge, History, List, MapPin, PauseCircle, Settings, XCircle } from "lucide-react";
+import { CalendarDays, CheckCircle2, Film, Flame, Gauge, History, List, MapPin, MessageSquareText, PauseCircle, Settings, XCircle } from "lucide-react";
 import { notFound } from "next/navigation";
 import { followUser, unfollowUser } from "@/app/actions/social";
 import { MediaCard } from "@/components/media-card";
 import { ListCardArt } from "@/components/list-card-art";
+import { UserReviewList, type UserReview } from "@/components/user-review-list";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fromDbMedia } from "@/lib/db-mappers";
 import { ensureMediaSummaries } from "@/lib/catalog";
 import { getMedia, imageUrl } from "@/lib/tmdb";
 import { withCommunityRatings } from "@/lib/community-ratings";
+
+const reviewSelect = "id,title,body,contains_spoilers,created_at,updated_at,media(id,tmdb_id,kind,title,poster_path,backdrop_path),seasons(id,season_number,name,poster_path,media(id,tmdb_id,kind,title,poster_path,backdrop_path)),episodes(id,name,episode_number,still_path,seasons(season_number,name,media(id,tmdb_id,kind,title,poster_path,backdrop_path))),ratings(score)";
 
 export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
@@ -19,12 +22,14 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   if (!profile) notFound();
   const viewer = (await supabase.auth.getUser()).data.user;
   const isOwner = viewer?.id === profile.id;
-  const [followers, following, progressCount, progressStatuses, ratings, favorites, lists, listCount, history, streakEvents, watchCount, relationship] = await Promise.all([
+  const [followers, following, progressCount, progressStatuses, ratings, reviews, reviewCount, favorites, lists, listCount, history, streakEvents, watchCount, relationship] = await Promise.all([
     supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id).eq("status", "accepted"),
     supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id).eq("status", "accepted"),
     supabase.from("progress").select("*", { count: "exact", head: true }).eq("user_id", profile.id),
     supabase.from("progress").select("status,updated_at,media(*)").eq("user_id", profile.id).order("updated_at", { ascending: false }).limit(500),
     supabase.from("ratings").select("score,media_id").eq("user_id", profile.id),
+    supabase.from("reviews").select(reviewSelect).eq("user_id", profile.id).order("updated_at", { ascending: false }).limit(6),
+    supabase.from("reviews").select("*", { count: "exact", head: true }).eq("user_id", profile.id),
     supabase.from("favorites").select("media(*)").eq("user_id", profile.id).order("position").limit(12),
     supabase.from("lists").select("id,name,description,visibility,updated_at,cover_url,featured_media_id,list_items(position,media(id,tmdb_id,kind,title,poster_path,backdrop_path))").eq("user_id", profile.id).order("name", { ascending: true }),
     supabase.from("lists").select("*", { count: "exact", head: true }).eq("user_id", profile.id),
@@ -68,13 +73,14 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
         <div className="profile-name-block"><div className="eyebrow">Member since {memberSince}</div><h1 className="display">{profile.display_name || profile.username}</h1><div className="profile-handle"><span>@{profile.username}</span><span>{followers.count ?? 0} followers</span><span>{following.count ?? 0} following</span></div>{profile.bio && <p>{profile.bio}</p>}<div className="profile-location"><MapPin size={13} /> {profile.region}</div></div>
         <div className="profile-actions">{isOwner ? <Link className="button ghost" href="/settings/profile"><Settings size={16} /> Edit profile</Link> : viewer && <form action={relationship.data ? unfollowUser : followUser}><input type="hidden" name="userId" value={profile.id} /><input type="hidden" name="username" value={profile.username} /><input type="hidden" name="private" value={String(privateProfile)} /><button className="button accent">{relationship.data?.status === "pending" ? "Requested" : relationship.data ? "Following" : privateProfile ? "Request follow" : "Follow"}</button></form>}</div>
       </div>
-      <nav className="profile-nav"><a href="#overview">Overview</a><a href="#activity">Activity</a><a href="#lists">Lists</a>{isOwner && <><Link href="/history">Full history</Link><Link href="/stats">Statistics</Link></>}</nav>
+      <nav className="profile-nav"><a href="#overview">Overview</a><a href="#activity">Activity</a><a href="#lists">Lists</a>{isOwner && <><a href="#reviews">Reviews</a><Link href="/history">Full history</Link><Link href="/stats">Statistics</Link></>}</nav>
     </section>
 
     <section className="profile-stat-band" id="overview">
       <div><Film size={17} /><strong>{progressCount.count ?? 0}</strong><span>tracked titles</span></div>
       <div><History size={17} /><strong>{watchCount.count ?? 0}</strong><span>watch events</span></div>
       <div><Gauge size={17} /><strong>{averageRating}</strong><span>average rating</span></div>
+      <div><MessageSquareText size={17} /><strong>{reviewCount.count ?? 0}</strong><span>reviews</span></div>
       <div><List size={17} /><strong>{listCount.count ?? 0}</strong><span>lists</span></div>
     </section>
 
@@ -85,6 +91,8 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
       return <Link className="profile-history-card" href={href} key={event.id}><div className="profile-history-art">{art && <Image src={art} alt="" fill sizes="360px" />}{rating != null && <b className="profile-history-rating-badge">{rating.toFixed(1)}<small>/10</small></b>}</div><div><span>{event.watched_at ? new Date(event.watched_at).toLocaleDateString("en", { day: "numeric", month: "short" }) : "Date unknown"}</span><strong>{media?.title}</strong><small>{episode ? `S${season?.season_number} E${episode.episode_number} · ${episode.name}` : "Movie watched"}</small></div></Link>;
     })}</div></section>}
 
+    {isOwner && (reviews.data?.length ?? 0) > 0 && <section className="section" id="reviews"><div className="section-head"><div><div className="eyebrow">Your opinions, collected</div><h2 className="display">Your reviews</h2></div><Link className="text-link" href="/reviews">See all reviews →</Link></div><UserReviewList reviews={(reviews.data ?? []) as UserReview[]} compact /></section>}
+
     <section className="section"><div className="section-head"><div><div className="eyebrow">Your viewing momentum</div><h2 className="display">Progress</h2></div>{isOwner && <Link className="text-link" href="/library">Open library →</Link>}</div><div className="profile-progress-layout"><div className="progress-state-grid">{progressGroups.map(group => <Link className={`progress-state-card ${group.key}`} href={`/library?status=${group.key === "active" ? "watching" : group.key}`} key={group.key}><group.icon size={21} /><strong>{group.rows.length}</strong><span>{group.label}</span><div className="progress-mini-posters">{group.rows.slice(0, 4).map((row: any) => { const poster = imageUrl(row.media?.poster_path, "w185"); return poster ? <Image src={poster} alt="" width={36} height={54} key={row.media?.id} /> : null; })}</div></Link>)}</div><div className="streak-card"><Flame size={28} /><div><span>Current streak</span><strong>{currentStreak} {currentStreak === 1 ? "day" : "days"}</strong><small>Longest streak · {longestStreak} days</small></div></div></div>{currentlyWatching.length > 0 && <><div className="profile-subhead"><strong>Currently watching</strong><div><span>Only active and paused titles appear here.</span>{isOwner && <Link className="text-link" href="/library?status=watching">See all →</Link>}</div></div><div className="progress-recent-row">{currentlyWatching.slice(0, 8).map(row => <div className="tracked-card" key={`${row.item!.kind}-${row.item!.id}`}><MediaCard item={row.item!} /><span>{row.status} · updated {new Date(row.updatedAt).toLocaleDateString()}</span></div>)}</div></>}</section>
 
     {favoriteItems.length > 0 && <section className="section"><div className="section-head"><div><div className="eyebrow">Personal canon</div><h2 className="display">Favorites</h2></div>{isOwner && <Link className="text-link" href="/library?view=favorites">See all favorites →</Link>}</div><div className="media-grid">{favoriteItems.slice(0, 6).map(item => <MediaCard item={item} key={`${item.kind}-${item.id}`} />)}</div></section>}
@@ -94,6 +102,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
       return <Link className="profile-list-card" href={`/lists/${list.id}`} key={list.id}><ListCardArt customCover={list.cover_url} featuredArt={featuredArt} posters={posters} compact /><div className="profile-list-copy"><span className="eyebrow">{list.visibility}</span><h3>{list.name}</h3><p>{list.description || "A hand-picked collection."}</p><strong>{listItems.length} {listItems.length === 1 ? "title" : "titles"}</strong></div></Link>;
     })}</div></section>}
 
-    {isOwner && <section className="profile-shortcuts"><Link href="/calendar"><CalendarDays size={20} /><div><strong>Episode calendar</strong><span>See what airs next</span></div></Link><Link href="/history"><History size={20} /><div><strong>Watch history</strong><span>Browse your complete diary</span></div></Link></section>}
+    {isOwner && <section className="profile-shortcuts"><Link href="/calendar"><CalendarDays size={20} /><div><strong>Episode calendar</strong><span>See what airs next</span></div></Link><Link href="/history"><History size={20} /><div><strong>Watch history</strong><span>Browse your complete diary</span></div></Link><Link href="/reviews"><MessageSquareText size={20} /><div><strong>Your reviews</strong><span>Open every review and its title</span></div></Link></section>}
   </div></main>;
 }

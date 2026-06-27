@@ -65,7 +65,7 @@ img { max-width: 100%; }
 .hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, var(--bg), transparent 18%); }
 .hero-content { width: min(720px, 75%); padding: 72px 64px 100px; }
 .hero h1 { font-size: clamp(3.6rem, 7vw, 7rem); line-height: .86; margin: 16px 0 24px; text-wrap: balance; }
-.hero-copy { color: #d0d2cf; font-size: 1rem; line-height: 1.75; max-width: 620px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.hero-copy { min-height: 5.25em; color: #d0d2cf; font-size: 1rem; line-height: 1.75; max-width: 620px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .home-carousel { position: relative; height: 600px; min-height: 600px; }
 .home-carousel .hero-content { min-height: 600px; display: flex; flex-direction: column; justify-content: flex-end; }
 .home-carousel h1 { min-height: 1.72em; max-width: 760px; display: flex; align-items: flex-end; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
@@ -363,7 +363,7 @@ img { max-width: 100%; }
 .profile-nav { display: flex; gap: 22px; padding: 10px 12px; border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); overflow-x: auto; }
 .profile-nav a { flex: 0 0 auto; padding: 8px 0; border-radius: 0; color: var(--muted); font-size: .72rem; font-weight: 750; }
 .profile-nav a:hover { color: var(--text); background: transparent; }
-.profile-stat-band { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 16px; overflow: hidden; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); border-radius: 0; background: transparent; }
+.profile-stat-band { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin-top: 16px; overflow: hidden; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); border-radius: 0; background: transparent; }
 .profile-stat-band > div { padding: 14px 20px; display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 10px; border-right: 1px solid color-mix(in srgb, var(--line) 65%, transparent); }
 .profile-stat-band > div:last-child { border: 0; }
 .profile-stat-band svg { color: var(--accent); }
@@ -398,7 +398,7 @@ img { max-width: 100%; }
 .profile-list-copy h3 { margin: 5px 0; font-size: 1rem; }
 .profile-list-copy p { height: 2.7em; margin: 0 0 12px; color: var(--muted); font-size: .72rem; line-height: 1.4; overflow: hidden; }
 .profile-list-copy > strong { font-size: .7rem; }
-.profile-shortcuts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 58px; }
+.profile-shortcuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 58px; }
 .profile-shortcuts > a { padding: 16px 2px; border: 0; border-top: 1px solid color-mix(in srgb, var(--line) 65%, transparent); border-radius: 0; background: transparent; display: flex; align-items: center; gap: 13px; }
 .profile-shortcuts svg { color: var(--accent); }
 .profile-shortcuts div { display: grid; gap: 3px; }
@@ -663,6 +663,19 @@ img { max-width: 100%; }
 .review-card-body p { margin: 0; color: color-mix(in srgb,var(--text) 76%,transparent); font-size: .76rem; line-height: 1.7; white-space: pre-wrap; }
 .review-card-body summary { color: #e8a45d; font-size: .7rem; font-weight: 750; cursor: pointer; }
 .review-card-body details p { margin-top: 12px; }
+.user-review-list { display: grid; gap: 1px; border-block: 1px solid var(--line); background: var(--line); }
+.user-review-list.compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.user-review-card { min-width: 0; padding: 14px 0; background: var(--bg); display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 16px; transition: background .18s, transform .18s; }
+.user-review-card:hover { background: color-mix(in srgb, var(--surface) 62%, var(--bg)); transform: translateY(-1px); }
+.user-review-art { position: relative; min-width: 0; aspect-ratio: 16 / 10; border-radius: 8px; overflow: hidden; background: var(--surface-2); display: grid; place-items: center; color: var(--muted); }
+.user-review-art img { object-fit: cover; }
+.user-review-copy { min-width: 0; display: grid; align-content: start; gap: 5px; }
+.user-review-kicker { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--accent); font-size: .58rem; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
+.user-review-kicker strong { flex: 0 0 auto; color: #ffc24b; display: inline-flex; align-items: center; gap: 4px; letter-spacing: 0; }
+.user-review-copy h3 { margin: 0; font-size: 1rem; letter-spacing: -.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-review-copy small { color: var(--muted); font-size: .65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-review-copy b { margin-top: 2px; font-family: Georgia, serif; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-review-copy p { margin: 0; color: color-mix(in srgb,var(--text) 72%,transparent); font-size: .72rem; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .target-rating-picker { min-height: 60px; margin: 0; }
 .episode-detail-hero { position: relative; min-height: 650px; margin-top: -32px; display: flex; align-items: end; overflow: hidden; }
 .episode-detail-hero::before { content: ""; position: absolute; z-index: 1; inset: 0; background: linear-gradient(0deg, var(--bg) 3%, rgba(7,8,9,.55) 65%, rgba(7,8,9,.18)), linear-gradient(90deg, rgba(7,8,9,.75), transparent 65%); }
@@ -885,6 +898,8 @@ img { max-width: 100%; }
   .review-composer-footer .button { width: 100%; }
   .review-grid { grid-template-columns: 1fr; }
   .review-card { padding-inline: 16px; }
+  .user-review-list.compact { grid-template-columns: 1fr; }
+  .user-review-card { grid-template-columns: 94px minmax(0, 1fr); gap: 12px; }
   .season-hero { grid-template-columns: 105px 1fr; gap: 16px; align-items: start; padding: 20px 0; }
   .season-hero > img { width: 105px; height: 158px; }
   .season-hero h1 { font-size: 2.6rem; }

@@ -13,7 +13,13 @@ export function InfiniteRecommendationGrid({ initial, nextCursor, query, total }
     try {
       const response = await fetch(`/api/recommendations?${query}&cursor=${cursor}`);
       const result = await response.json();
-      if (response.ok) { setItems(value => [...value, ...result.items]); setCursor(result.nextCursor); }
+      if (response.ok) {
+        setItems(value => {
+          const seen = new Set(value.map(entry => `${entry.item.kind}-${entry.item.id}`));
+          return [...value, ...result.items.filter((entry: Entry) => !seen.has(`${entry.item.kind}-${entry.item.id}`))];
+        });
+        setCursor(result.nextCursor); setTotalCount(value => Number(result.total ?? value));
+      }
       else setCursor(null);
     } finally { loadingRef.current = false; setLoading(false); }
   }, [cursor, query]);

@@ -110,3 +110,12 @@ export async function recommendationPage(supabase: any, userId: string, filters:
   if (refreshedShows.length) await ensureMediaSummaries(refreshedShows); const refreshedMap = new Map(refreshedShows.map(item => [`${item.kind}-${item.id}`, item]));
   const page = selectedRows.map((row: any, index: number) => { const item = selectedItems[index]; return { item: refreshedMap.get(`${item.kind}-${item.id}`) ?? item, reason: row.tasteReason ?? row.reasons?.[0] ?? "Chosen for your taste" }; }); return { items: page, nextCursor: offset + size < filtered.length ? String(offset + size) : null, total: filtered.length };
 }
+
+export async function recommendationPageWithRefresh(supabase: any, userId: string, filters: RecommendationFilters, offset = 0, size = 24): Promise<RecommendationPage> {
+  const page = await recommendationPage(supabase, userId, filters, offset, size);
+  if (page.nextCursor || page.total > offset + size) return page;
+
+  await ensureRecommendations(userId, true);
+  const refreshed = await recommendationPage(supabase, userId, filters, offset, size);
+  return refreshed.total > page.total || refreshed.items.length > page.items.length || refreshed.nextCursor ? refreshed : page;
+}
