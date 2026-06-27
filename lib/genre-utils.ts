@@ -87,3 +87,9 @@ export function normalizeGenreNamesForStats(item: Pick<MediaSummary, "genres" | 
   if (isThrillerLike(item)) names.add("Thriller");
   return [...names];
 }
+
+export function mediaHasNormalizedGenre(item: Pick<MediaSummary, "genres" | "originalLanguage" | "originCountries"> | any, genreName?: string | null) {
+  const target = String(genreName ?? "").trim().toLowerCase();
+  if (!target) return false;
+  return normalizeGenreNamesForStats(item).some(name => name.toLowerCase() === target);
+}
