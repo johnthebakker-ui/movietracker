@@ -28,7 +28,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
     supabase.from("favorites").select("media(*)").eq("user_id", profile.id).order("position").limit(12),
     supabase.from("lists").select("id,name,description,visibility,updated_at,cover_url,featured_media_id,list_items(position,media(id,tmdb_id,kind,title,poster_path,backdrop_path))").eq("user_id", profile.id).order("name", { ascending: true }),
     supabase.from("lists").select("*", { count: "exact", head: true }).eq("user_id", profile.id),
-    supabase.from("watch_events").select("id,watched_at,episode_id,media(tmdb_id,kind,title,backdrop_path,poster_path),episodes(name,episode_number,still_path,seasons(season_number))").eq("user_id", profile.id).order("watched_at", { ascending: false, nullsFirst: false }).limit(8),
+    supabase.from("watch_events").select("id,watched_at,episode_id,media(id,tmdb_id,kind,title,backdrop_path,poster_path),episodes(name,episode_number,still_path,seasons(season_number))").eq("user_id", profile.id).order("watched_at", { ascending: false, nullsFirst: false }).limit(8),
     supabase.from("watch_events").select("watched_at").eq("user_id", profile.id).not("watched_at", "is", null).order("watched_at", { ascending: false }).limit(1000),
     supabase.from("watch_events").select("*", { count: "exact", head: true }).eq("user_id", profile.id),
     viewer && !isOwner ? supabase.from("follows").select("status").eq("follower_id", viewer.id).eq("following_id", profile.id).maybeSingle() : Promise.resolve({ data: null }) as any

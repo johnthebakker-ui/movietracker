@@ -39,14 +39,21 @@ function searchableText(item: any) {
 
 export function isSuperheroLike(item: any) {
   const text = searchableText(item);
-  return /\b(superhero|super hero|marvel|dc comics|batman|superman|spider[\s-]?man|avengers|x[\s-]?men|iron man|captain america|wonder woman|aquaman|the flash|green lantern|thor|hulk|justice league|guardians of the galaxy|venom|deadpool|wolverine|black panther|fantastic four|daredevil|punisher)\b/i.test(text);
+  return /\b(superhero|super hero|marvel|mcu|dc comics|dc universe|batman|superman|man of steel|spider[\s-]?man|ant[\s-]?man|avengers|x[\s-]?men|iron man|captain america|captain marvel|doctor strange|dr\. strange|wonder woman|aquaman|the flash|green lantern|green arrow|thor|hulk|justice league|guardians of the galaxy|venom|deadpool|wolverine|black panther|black adam|fantastic four|daredevil|punisher|shazam|suicide squad|harley quinn|catwoman|batgirl|blade|moon knight|ms\. marvel|scarlet witch|wanda|vision|loki|hawkeye|falcon|winter soldier|agents of s\.?h\.?i\.?e\.?l\.?d)\b/i.test(text);
 }
 
 export function isHorrorLike(item: any) {
   const genres = item?.genres ?? [];
   if (genres.some((genre: Genre | any) => Number(genre?.id) === 27 || String(genre?.name ?? "").toLowerCase() === "horror")) return true;
   const text = searchableText(item);
-  return /\b(horror|nightmare|nightmarish|haunted|ghost|demon|curse|cursed|slasher|zombie|vampire|possession|supernatural|terrifying|creature)\b/i.test(text);
+  return /\b(horror|nightmare|nightmarish|haunted|ghost|demon|curse|cursed|slasher|zombie|vampire|possession|supernatural|terrifying|creature|monster|traps all those who enter|town they cannot escape|evil entity)\b/i.test(text);
+}
+
+export function isThrillerLike(item: any) {
+  const genres = item?.genres ?? [];
+  if (genres.some((genre: Genre | any) => Number(genre?.id) === 53 || String(genre?.name ?? "").toLowerCase() === "thriller")) return true;
+  const text = searchableText(item);
+  return /\b(thriller|suspense|suspenseful|serial killer|kidnap|kidnapped|abduct|abducted|conspiracy|stalker|psychological|murder mystery|tense|paranoia|manhunt|hostage)\b/i.test(text);
 }
 
 export function matchesExcludedGenre(item: Pick<MediaSummary, "genres" | "originalLanguage" | "originCountries"> | any, excluded: string[]) {
@@ -77,5 +84,6 @@ export function normalizeGenreNamesForStats(item: Pick<MediaSummary, "genres" | 
   }
   if (isSuperheroLike(item)) names.add("Superhero");
   if (isHorrorLike(item)) names.add("Horror");
+  if (isThrillerLike(item)) names.add("Thriller");
   return [...names];
 }
