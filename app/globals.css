@@ -501,10 +501,12 @@ img { max-width: 100%; }
 .watch-date-quick { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
 .watch-date-quick form { min-width: 0; }
 .watch-date-quick button { width: 100%; min-height: 78px; padding: 9px; border: 1px solid transparent; border-radius: 10px; color: var(--muted); background: var(--surface-2); display: flex; align-items: flex-start; flex-direction: column; gap: 7px; text-align: left; cursor: pointer; }
+.watch-date-quick button:disabled { cursor: wait; opacity: .62; }
 .watch-date-quick button:hover { border-color: color-mix(in srgb,var(--accent) 45%,transparent); color: var(--text); background: color-mix(in srgb,var(--accent) 8%,var(--surface-2)); }
 .watch-date-quick button > svg { color: var(--accent); }
 .watch-date-quick button span { display: grid; gap: 2px; color: var(--text); font-size: .7rem; font-weight: 800; }
 .watch-date-quick button small { color: var(--muted); font-size: .55rem; font-weight: 500; }
+.watch-date-status { margin-top: 10px; padding: 9px 10px; border-radius: 10px; color: #8ee5b1; background: rgba(67,181,129,.12); display: flex; align-items: center; gap: 7px; font-size: .68rem; font-weight: 750; }
 .watch-custom-date { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 8px; }
 .watch-custom-date label { display: grid; gap: 6px; color: var(--muted); font-size: .62rem; }
 .watch-custom-date .input { min-height: 40px; padding-block: 8px; }
@@ -665,12 +667,12 @@ img { max-width: 100%; }
 .review-card-body details p { margin-top: 12px; }
 .user-review-list { display: grid; gap: 1px; border-block: 1px solid var(--line); background: var(--line); }
 .user-review-list.compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.user-review-card { min-width: 0; padding: 14px 0; background: var(--bg); display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 16px; transition: background .18s, transform .18s; }
+.user-review-card { min-width: 0; padding: 14px 16px; background: var(--bg); display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 16px; transition: background .18s, transform .18s; }
 .user-review-card:hover { background: color-mix(in srgb, var(--surface) 62%, var(--bg)); transform: translateY(-1px); }
 .user-review-art { position: relative; min-width: 0; aspect-ratio: 16 / 10; border-radius: 8px; overflow: hidden; background: var(--surface-2); display: grid; place-items: center; color: var(--muted); }
 .user-review-art img { object-fit: cover; }
 .user-review-copy { min-width: 0; display: grid; align-content: start; gap: 5px; }
-.user-review-kicker { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--accent); font-size: .58rem; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
+.user-review-kicker { display: flex; align-items: center; justify-content: flex-start; gap: 10px; color: var(--accent); font-size: .58rem; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
 .user-review-kicker strong { flex: 0 0 auto; color: #ffc24b; display: inline-flex; align-items: center; gap: 4px; letter-spacing: 0; }
 .user-review-copy h3 { margin: 0; font-size: 1rem; letter-spacing: -.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .user-review-copy small { color: var(--muted); font-size: .65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
