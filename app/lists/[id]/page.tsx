@@ -51,10 +51,13 @@ function collectionReleaseOrder(a: Row, b: Row) {
 function franchiseName(row: Row) {
   const collection = row.media.kind === "movie" ? collectionOf(row.media) : null;
   if (collection?.name) return collection.name;
-  const title = String(row.media.title ?? "").toLowerCase();
+  const title = String(row.media.title ?? "").toLowerCase().replace(/[-_]/g, " ");
   if (title.includes("attack on titan")) return "Attack on Titan Collection";
   if (title.includes("chainsaw man")) return "Chainsaw Man Collection";
-  if (title.includes("avatar: the last airbender") || title.includes("legend of korra") || title.includes("the last airbender")) return "Avatar: The Last Airbender Collection";
+  if ((title.includes("avatar") && title.includes("last airbender")) || title.includes("legend of korra")) return "Avatar: The Last Airbender Collection";
+  if (title.includes("wreck it ralph") || title.includes("ralph breaks the internet")) return "Wreck-It Ralph Collection";
+  if (title.includes("incredibles")) return "The Incredibles Collection";
+  if (title.includes("ice age")) return "Ice Age Collection";
   return null;
 }
 
@@ -74,12 +77,6 @@ function groupedRows(rows: Row[], mode: GroupMode) {
       if (key) groups.set(key, [...(groups.get(key) ?? []), row]);
       else other.push(row);
     });
-    for (const [key, groupRows] of [...groups.entries()]) {
-      if (groupRows.length < 2) {
-        groups.delete(key);
-        other.push(...groupRows);
-      }
-    }
     if (other.length) groups.set("Other titles", other);
   }
   if (mode === "studios") {
