@@ -39,7 +39,7 @@ export default async function TitlePage({ params }: Props) {
   const supabase = await createSupabaseServerClient();
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
   const externalRatings = await getExternalRatings((item.raw as any).external_ids?.imdb_id);
-  let state: any = null, rating: any = null, favorite = false, lists: any[] = [], watched = false, notInterested = false, reviews: any[] = [], communityScore: number | null = null; const dismissedRecommendationKeys = new Set<string>();
+  let state: any = null, rating: any = null, favorite = false, lists: any[] = [], containingListNames: string[] = [], watched = false, notInterested = false, reviews: any[] = [], communityScore: number | null = null; const dismissedRecommendationKeys = new Set<string>();
   if (supabase && mediaId) {
     const reviewQuery = supabase.from("reviews").select("id,title,body,contains_spoilers,created_at,updated_at,user_id,rating_id,profiles(username,display_name,avatar_url),ratings(score)").eq("media_id", mediaId).order("created_at", { ascending: false }).limit(20);
     const calls: any[] = [reviewQuery, supabase.from("ratings").select("score").eq("media_id", mediaId)];
@@ -54,6 +54,11 @@ export default async function TitlePage({ params }: Props) {
     const results = await Promise.all(calls);
     reviews = results[0].data ?? []; const communityRatings = results[1].data ?? []; communityScore = communityRatings.length ? communityRatings.reduce((sum: number, row: any) => sum + Number(row.score), 0) / communityRatings.length : null;
     if (user) { state = results[2].data; rating = results[3].data; favorite = Boolean(results[4].data); lists = results[5].data ?? []; watched = Boolean(results[6].count); const dismissalRows = results[7].data ?? []; notInterested = dismissalRows.some((row: any) => row.media_id === mediaId); dismissalRows.forEach((row: any) => { const dismissedMedia = Array.isArray(row.media) ? row.media[0] : row.media; if (dismissedMedia) dismissedRecommendationKeys.add(`${dismissedMedia.kind}-${dismissedMedia.tmdb_id}`); }); }
+    if (user && lists.length) {
+      const { data: listMemberships } = await supabase.from("list_items").select("list_id").eq("media_id", mediaId).in("list_id", lists.map((list: any) => list.id));
+      const containing = new Set((listMemberships ?? []).map((row: any) => row.list_id));
+      containingListNames = lists.filter((list: any) => containing.has(list.id)).map((list: any) => list.name);
+    }
   }
   const collectionItems = kind === "movie" && item.collectionTmdbId ? (await getCollection(item.collectionTmdbId)).filter(part => part.id !== item.id && !dismissedRecommendationKeys.has(`movie-${part.id}`)) : [];
   const existingReview = user ? reviews.find((review: any) => review.user_id === user.id) : null;
@@ -93,6 +98,7 @@ export default async function TitlePage({ params }: Props) {
         {kind === "movie" ? <WatchLogForm mediaId={mediaId} releaseDate={item.releaseDate} path={path} watched={watched} /> : <BulkWatchLogForm mediaId={mediaId} tmdbId={item.id} path={path} label="Mark entire series watched" scope="show" />}
         {lists.length > 0 && <AddToListForm mediaId={mediaId} path={path} lists={lists} />}
         </div>}
+        {containingListNames.length > 0 && <div className="list-membership-note"><span>In your lists</span><strong>{containingListNames.join(", ")}</strong></div>}
       </section>
       <section className="facts"><div className="fact"><small>{kind === "show" ? "Original run" : "Released"}</small><strong>{kind === "show" ? `${showRun}${showEnded ? " · Ended" : ""}` : item.releaseDate || "TBA"}</strong></div><div className="fact"><small>{director?.job ?? "Director"}</small><strong>{director?.name ?? "TBA"}</strong></div><div className="fact"><small>Original language</small><strong>{item.originalLanguage.toUpperCase()}</strong></div><div className="fact"><small>Genres</small><strong>{item.genres.map(g=>g.name).join(", ")}</strong></div></section>
       {kind === "show" && item.seasons.length > 0 && <section className="section seasons-prominent"><div className="section-head"><div><div className="eyebrow">The full story</div><h2 className="display">Seasons & episodes</h2></div><Link className="text-link" href={`${path}/episodes`}>All episodes & ratings →</Link></div><div className="season-list">{item.seasons.map((season)=><Link className="season-card" href={`${path}/season/${season.seasonNumber}`} key={season.id}>{season.posterPath && <Image src={imageUrl(season.posterPath,"w185")!} width={116} height={174} alt=""/>}<div><strong>{season.name}</strong><div className="muted" style={{fontSize:'.78rem',marginTop:6}}>{season.episodeCount} episodes · {yearOf(season.airDate)}</div></div></Link>)}</div></section>}

@@ -81,5 +81,9 @@ export function DiscoveryFilters({ kind, genres, params }: { kind: DiscoveryForm
       <ExcludeGenreMenu genres={genres} value={params.excludeGenres} legacyHideAnimation={params.hideAnimation === "1"} />
     </div>
     <div className="year-filter-row"><div className="year-filter-heading"><CalendarDays size={17} /><span className="muted">Release year</span></div><div className="year-mode"><label><input type="radio" name="yearMode" value="exact" checked={yearMode === "exact"} onChange={() => setYearMode("exact")} /> Exact year</label><label><input type="radio" name="yearMode" value="range" checked={yearMode === "range"} onChange={() => setYearMode("range")} /> Range</label></div><div className={`year-fields ${yearMode}`}>{yearMode === "exact" ? <input className="year-input" name="year" inputMode="numeric" pattern="[0-9]{4}" minLength={4} maxLength={4} placeholder="e.g. 2024" defaultValue={params.year} /> : <><input className="year-input" name="fromYear" inputMode="numeric" pattern="[0-9]{4}" placeholder="From" defaultValue={params.fromYear} /><span className="muted">to</span><input className="year-input" name="toYear" inputMode="numeric" pattern="[0-9]{4}" placeholder="To" defaultValue={params.toYear} /></>}</div><button className="button accent" type="submit">Show results</button></div>
+    <div className="recommendation-check-row">
+      <label className="filter-checkbox"><input type="checkbox" name="hideWatched" value="1" defaultChecked={params.hideWatched === "1" || params.hideWatched === "on"} /> Hide watched</label>
+      <label className="filter-checkbox"><input type="checkbox" name="hideListed" value="1" defaultChecked={params.hideListed === "1" || params.hideListed === "on"} /> Hide titles in my lists</label>
+    </div>
   </form>;
 }

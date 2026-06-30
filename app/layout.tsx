@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "Track films and series, rate every episode, build unlimited lists, and discover what to watch next.",
   applicationName: "MovieTracker",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icon.svg" },
+  icons: { icon: "/movietracker-logo.png", apple: "/movietracker-logo.png" },
   appleWebApp: { capable: true, title: "MovieTracker", statusBarStyle: "black-translucent" }
 };
 export const viewport: Viewport = { themeColor: [{ media: "(prefers-color-scheme: dark)", color: "#0b0c0d" }, { media: "(prefers-color-scheme: light)", color: "#f3f1eb" }] };

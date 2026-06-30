@@ -16,7 +16,7 @@ function sortItems(items: MediaSummary[], sort: string) {
 export async function discoverCatalog(params: DiscoveryParams) {
   const kdrama = params.genre === "kdrama";
   const superhero = params.genre === SUPERHERO_GENRE_KEY;
-  const requestedFormat: DiscoveryFormat = params.kind === "movie" || params.kind === "show" ? params.kind : "all";
+  const requestedFormat: DiscoveryFormat = params.view === "films" ? "movie" : params.view === "series" ? "show" : params.kind === "movie" || params.kind === "show" ? params.kind : "all";
   const format: DiscoveryFormat = kdrama ? "show" : requestedFormat;
   const excludedGenres = parseExcludedGenres(params.excludeGenres);
   if (params.hideAnimation === "1" && !excludedGenres.includes(String(ANIMATION_GENRE_ID))) excludedGenres.push(String(ANIMATION_GENRE_ID));
@@ -27,7 +27,7 @@ export async function discoverCatalog(params: DiscoveryParams) {
   const invalidRange = yearMode === "range" && fromYear !== null && toYear !== null && fromYear > toYear;
   const dateFrom = yearMode === "exact" && exactYear ? `${exactYear}-01-01` : yearMode === "range" && fromYear ? `${fromYear}-01-01` : undefined;
   const dateTo = yearMode === "exact" && exactYear ? `${exactYear}-12-31` : yearMode === "range" && toYear ? `${toYear}-12-31` : undefined;
-  const legacySort = params.sort ?? "popularity.desc";
+  const legacySort = params.view === "films" || params.view === "series" ? "newest" : params.sort ?? "popularity.desc";
   const sort = legacySort.includes("vote_average") ? "rating" : legacySort.includes("release_date") || legacySort.includes("air_date") || legacySort === "newest" ? "newest" : "popularity";
   const common: Record<string, string | undefined> = {
     with_genres: kdrama || superhero ? kdrama ? "18" : undefined : params.genre,
@@ -57,6 +57,42 @@ export async function discoverCatalog(params: DiscoveryParams) {
   return { format, invalidRange, items, page: Math.max(movies.page, shows.page), totalPages: Math.max(movies.totalPages, shows.totalPages) };
 }
 
+export async function filterPersonalDiscoveryItems(items: MediaSummary[], params: DiscoveryParams, supabase: any, userId?: string | null) {
+  if (!supabase || !userId || (!truthy(params.hideWatched) && !truthy(params.hideListed)) || !items.length) return items;
+  const byKind = new Map<MediaKind, number[]>();
+  items.forEach(item => byKind.set(item.kind, [...(byKind.get(item.kind) ?? []), item.id]));
+  const mediaRows = (await Promise.all([...byKind.entries()].map(([kind, ids]) => ids.length ? supabase.from("media").select("id,tmdb_id,kind").eq("kind", kind).in("tmdb_id", ids) : Promise.resolve({ data: [] })))).flatMap(result => result.data ?? []);
+  const mediaIdByKey = new Map(mediaRows.map((row: any) => [`${row.kind}-${row.tmdb_id}`, Number(row.id)]));
+  const mediaIds = [...new Set(mediaRows.map((row: any) => Number(row.id)))];
+  if (!mediaIds.length) return items;
+
+  const hidden = new Set<number>();
+  if (truthy(params.hideWatched)) {
+    const [watches, completed] = await Promise.all([
+      supabase.from("watch_events").select("media_id").eq("user_id", userId).in("media_id", mediaIds),
+      supabase.from("progress").select("media_id").eq("user_id", userId).eq("status", "completed").in("media_id", mediaIds)
+    ]);
+    (watches.data ?? []).forEach((row: any) => hidden.add(Number(row.media_id)));
+    (completed.data ?? []).forEach((row: any) => hidden.add(Number(row.media_id)));
+  }
+  if (truthy(params.hideListed)) {
+    const { data: lists } = await supabase.from("lists").select("id").eq("user_id", userId);
+    const listIds = (lists ?? []).map((row: any) => row.id);
+    if (listIds.length) {
+      const { data: listedRows } = await supabase.from("list_items").select("media_id").in("list_id", listIds).in("media_id", mediaIds);
+      (listedRows ?? []).forEach((row: any) => hidden.add(Number(row.media_id)));
+    }
+  }
+  return items.filter(item => {
+    const mediaId = mediaIdByKey.get(`${item.kind}-${item.id}`);
+    return !mediaId || !hidden.has(mediaId);
+  });
+}
+
 export function discoveryApiFilters(params: DiscoveryParams) {
-  return Object.fromEntries(["genre", "country", "rating", "sort", "yearMode", "year", "fromYear", "toYear", "excludeGenres", "hideAnimation"].map(key => [key, params[key]]).filter((entry): entry is [string, string] => Boolean(entry[1])));
+  return Object.fromEntries(["view", "genre", "country", "rating", "sort", "yearMode", "year", "fromYear", "toYear", "excludeGenres", "hideAnimation", "hideWatched", "hideListed"].map(key => [key, params[key]]).filter((entry): entry is [string, string] => Boolean(entry[1])));
+}
+
+function truthy(value?: string) {
+  return value === "1" || value === "true" || value === "on";
 }

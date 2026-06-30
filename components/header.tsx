@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "@/components/app-image";
-import { Bell, CalendarDays, Clapperboard, Compass, Home, Library, Search, UserRound } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { Bell, CalendarDays, Compass, Home, Library, Search, UserRound } from "lucide-react";
 import { getServerAuth } from "@/lib/auth-server";
 import { TraktAutoSync } from "@/components/trakt-auto-sync";
 
@@ -11,14 +10,13 @@ export async function Header() {
   if (user && supabase) profile = (await supabase.from("profiles").select("username,avatar_url").eq("id", user.id).maybeSingle()).data;
   return <>{user && <TraktAutoSync />}<header className="site-header">
     <div className="shell header-inner">
-      <Link className="brand" href="/"><span className="brand-mark"><Clapperboard size={15} /></span>MovieTracker</Link>
+      <Link className="brand" href="/"><span className="brand-mark"><Image src="/movietracker-logo.png" width={28} height={28} alt="" /></span>MovieTracker</Link>
       <nav className="main-nav" aria-label="Primary navigation">
         <Link href="/discover">Discover</Link><Link href="/library">Library</Link><Link href="/calendar"><CalendarDays size={14} /> Calendar</Link><Link href="/lists">Lists</Link><Link href="/recommendations">For you</Link>
       </nav>
       <div className="header-actions">
         <Link className="icon-button" href="/search" aria-label="Search"><Search size={17} /></Link>
         {user && <Link className="icon-button" href="/notifications" aria-label="Notifications"><Bell size={17} /></Link>}
-        <ThemeToggle />
         {user ? <Link className="avatar" href={`/profile/${profile?.username ?? "me"}`} aria-label="Your profile">
           <Image className="avatar" src={profile?.avatar_url || "/default-avatar.svg"} width={38} height={38} alt="" />
         </Link> : <Link className="button small" href="/login">Sign in</Link>}
