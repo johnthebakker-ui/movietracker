@@ -48,16 +48,16 @@ function collectionReleaseOrder(a: Row, b: Row) {
   return aDate.localeCompare(bDate) || a.media.title.localeCompare(b.media.title);
 }
 
-function franchiseName(row: Row) {
+function franchiseName(row: Row): { name: string; explicit: boolean } | null {
   const collection = row.media.kind === "movie" ? collectionOf(row.media) : null;
-  if (collection?.name) return collection.name;
+  if (collection?.name) return { name: collection.name, explicit: false };
   const title = String(row.media.title ?? "").toLowerCase().replace(/[-_]/g, " ");
-  if (title.includes("attack on titan")) return "Attack on Titan Collection";
-  if (title.includes("chainsaw man")) return "Chainsaw Man Collection";
-  if ((title.includes("avatar") && title.includes("last airbender")) || title.includes("legend of korra")) return "Avatar: The Last Airbender Collection";
-  if (title.includes("wreck it ralph") || title.includes("ralph breaks the internet")) return "Wreck-It Ralph Collection";
-  if (title.includes("incredibles")) return "The Incredibles Collection";
-  if (title.includes("ice age")) return "Ice Age Collection";
+  if (title.includes("attack on titan")) return { name: "Attack on Titan Collection", explicit: true };
+  if (title.includes("chainsaw man")) return { name: "Chainsaw Man Collection", explicit: true };
+  if ((title.includes("avatar") && title.includes("last airbender")) || title.includes("legend of korra")) return { name: "Avatar: The Last Airbender Collection", explicit: true };
+  if (title.includes("wreck it ralph") || title.includes("ralph breaks the internet")) return { name: "Wreck-It Ralph Collection", explicit: true };
+  if (title.includes("incredibles")) return { name: "The Incredibles Collection", explicit: true };
+  if (title.includes("ice age")) return { name: "Ice Age Collection", explicit: true };
   return null;
 }
 
@@ -71,12 +71,22 @@ function companyNames(row: Row) {
 function groupedRows(rows: Row[], mode: GroupMode) {
   const groups = new Map<string, Row[]>();
   if (mode === "collections") {
+    const explicitGroups = new Set<string>();
     const other: Row[] = [];
     rows.forEach(row => {
       const key = franchiseName(row);
-      if (key) groups.set(key, [...(groups.get(key) ?? []), row]);
+      if (key) {
+        if (key.explicit) explicitGroups.add(key.name);
+        groups.set(key.name, [...(groups.get(key.name) ?? []), row]);
+      }
       else other.push(row);
     });
+    for (const [name, groupRows] of groups.entries()) {
+      if (groupRows.length < 2 && !explicitGroups.has(name)) {
+        groups.delete(name);
+        other.push(...groupRows);
+      }
+    }
     if (other.length) groups.set("Other titles", other);
   }
   if (mode === "studios") {

@@ -42,7 +42,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       .not("watched_at", "is", null)
       .gte("watched_at", start.toISOString())
       .lt("watched_at", end.toISOString())
-      .order("watched_at", { ascending: true });
+      .order("watched_at", { ascending: false });
     events = (data ?? []).map((row: any) => {
       const media = row.media;
       const episode = row.episodes;
@@ -90,7 +90,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const cells = Array.from({ length: leading + daysInMonth }, (_, index) => index < leading ? null : index - leading + 1);
   const today = new Date().toISOString().slice(0, 10);
   const monthHref = (date: Date) => `/calendar?mode=${mode}&month=${monthKey(date)}`;
-  const eventDays = [...eventsByDate.entries()].sort(([left], [right]) => left.localeCompare(right));
+  const eventDays = [...eventsByDate.entries()].sort(([left], [right]) => right.localeCompare(left));
 
   return <main className="page"><div className="shell">
     <div className="page-heading-row"><div><div className="eyebrow">Your viewing schedule and diary</div><h1 className="display page-title">Calendar</h1><p className="muted">Switch between episodes due to air and everything you watched.</p></div><Link className="button ghost" href="/history">View full history</Link></div>

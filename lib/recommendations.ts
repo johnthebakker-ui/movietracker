@@ -7,7 +7,7 @@ import { ANIMATION_GENRE_ID, SUPERHERO_GENRE_KEY, isSuperheroLike, matchesExclud
 
 type DbMedia = { id?: number; tmdb_id: number; kind: MediaKind; title: string };
 type Signal = { media: DbMedia; weight: number; reason: string };
-export type RecommendationFilters = { kind?: string; genre?: string; country?: string; year?: string; hideWatched?: boolean; hideListed?: boolean; hideAnimation?: boolean; excludeGenres?: string; shuffle?: string };
+export type RecommendationFilters = { kind?: string; genre?: string; country?: string; yearMode?: string; year?: string; fromYear?: string; toYear?: string; hideWatched?: boolean; hideListed?: boolean; hideAnimation?: boolean; excludeGenres?: string; shuffle?: string };
 export type RecommendationEntry = { item: MediaSummary; reason: string };
 export type RecommendationPage = { items: RecommendationEntry[]; nextCursor: string | null; total: number };
 const kdramaPoolMarker = "kdrama-taste-pool-v2";
@@ -89,7 +89,17 @@ export async function recommendationPage(supabase: any, userId: string, filters:
   const watched = new Set([...(watches.data ?? []), ...(completed.data ?? [])].map((row: any) => row.media_id)); const dismissed = new Set((dismissals.data ?? []).map((row: any) => row.media_id)); const listIds = (lists.data ?? []).map((row: any) => row.id); const listedRows = filters.hideListed && listIds.length ? (await supabase.from("list_items").select("media_id").in("list_id", listIds)).data ?? [] : []; const listed = new Set(listedRows.map((row: any) => row.media_id));
   const excludedGenres = parseExcludedGenres(filters.excludeGenres);
   if (filters.hideAnimation && !excludedGenres.includes(String(ANIMATION_GENRE_ID))) excludedGenres.push(String(ANIMATION_GENRE_ID));
-  let filtered = (recommendations.data ?? []).map((row: any) => ({ ...row, media: Array.isArray(row.media) ? row.media[0] : row.media })).filter((row: any) => { const genres = row.media?.genres ?? []; const countries = row.media?.origin_countries ?? []; const isAnimation = genres.some((genre: any) => Number(genre.id) === 16); const isKdrama = row.media?.kind === "show" && row.media?.original_language === "ko" && countries.includes("KR") && genres.some((genre: any) => Number(genre.id) === 18) && !isAnimation; const isSuperhero = isSuperheroLike(row.media); return row.media && row.media.poster_path && !dismissed.has(row.media.id) && !matchesExcludedGenre(row.media, excludedGenres) && (!filters.kind || row.media.kind === filters.kind) && (!filters.country || countries.includes(filters.country)) && (!filters.year || row.media.release_date?.startsWith(filters.year)) && (!filters.genre || (filters.genre === "kdrama" ? isKdrama : filters.genre === SUPERHERO_GENRE_KEY ? isSuperhero : genres.some((genre: any) => String(genre.id) === filters.genre))) && (!filters.hideWatched || !watched.has(row.media.id)) && (!filters.hideListed || !listed.has(row.media.id)); });
+  const yearMode = filters.yearMode === "range" ? "range" : "exact";
+  const exactYear = /^\d{4}$/.test(filters.year ?? "") ? Number(filters.year) : null;
+  const fromYear = /^\d{4}$/.test(filters.fromYear ?? "") ? Number(filters.fromYear) : null;
+  const toYear = /^\d{4}$/.test(filters.toYear ?? "") ? Number(filters.toYear) : null;
+  const matchesYear = (date?: string | null) => {
+    if (yearMode !== "range") return !exactYear || date?.startsWith(String(exactYear));
+    const year = Number(date?.slice(0, 4));
+    if (!Number.isFinite(year)) return false;
+    return (fromYear == null || year >= fromYear) && (toYear == null || year <= toYear);
+  };
+  let filtered = (recommendations.data ?? []).map((row: any) => ({ ...row, media: Array.isArray(row.media) ? row.media[0] : row.media })).filter((row: any) => { const genres = row.media?.genres ?? []; const countries = row.media?.origin_countries ?? []; const isAnimation = genres.some((genre: any) => Number(genre.id) === 16); const isKdrama = row.media?.kind === "show" && row.media?.original_language === "ko" && countries.includes("KR") && genres.some((genre: any) => Number(genre.id) === 18) && !isAnimation; const isSuperhero = isSuperheroLike(row.media); return row.media && row.media.poster_path && !dismissed.has(row.media.id) && !matchesExcludedGenre(row.media, excludedGenres) && (!filters.kind || row.media.kind === filters.kind) && (!filters.country || countries.includes(filters.country)) && matchesYear(row.media.release_date) && (!filters.genre || (filters.genre === "kdrama" ? isKdrama : filters.genre === SUPERHERO_GENRE_KEY ? isSuperhero : genres.some((genre: any) => String(genre.id) === filters.genre))) && (!filters.hideWatched || !watched.has(row.media.id)) && (!filters.hideListed || !listed.has(row.media.id)); });
   if (filters.genre === "kdrama") {
     const affinities = await kdramaTasteProfile(supabase, userId);
     filtered = filtered.map((row: any) => {
