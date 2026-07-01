@@ -10,7 +10,7 @@ export async function Header() {
   if (user && supabase) profile = (await supabase.from("profiles").select("username,avatar_url").eq("id", user.id).maybeSingle()).data;
   return <>{user && <TraktAutoSync />}<header className="site-header">
     <div className="shell header-inner">
-      <Link className="brand" href="/"><span className="brand-mark"><Image src="/movietracker-logo.png" width={34} height={34} alt="" /></span>MovieTracker</Link>
+      <Link className="brand" href="/"><span className="brand-mark"><img src="/movietracker-logo.png" width={34} height={34} alt="" /></span>MovieTracker</Link>
       <nav className="main-nav" aria-label="Primary navigation">
         <Link href="/discover">Discover</Link><Link href="/library">Library</Link><Link href="/calendar"><CalendarDays size={14} /> Calendar</Link><Link href="/lists">Lists</Link><Link href="/recommendations">For you</Link>
       </nav>

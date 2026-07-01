@@ -58,6 +58,8 @@ function franchiseName(row: Row): { name: string; explicit: boolean } | null {
   if (title.includes("wreck it ralph") || title.includes("ralph breaks the internet")) return { name: "Wreck-It Ralph Collection", explicit: true };
   if (title.includes("incredibles")) return { name: "The Incredibles Collection", explicit: true };
   if (title.includes("ice age")) return { name: "Ice Age Collection", explicit: true };
+  if (title.includes("madagascar")) return { name: "Madagascar Collection", explicit: true };
+  if (title.includes("big hero 6")) return { name: "Big Hero 6 Collection", explicit: true };
   return null;
 }
 

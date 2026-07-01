@@ -24,15 +24,25 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const params = await searchParams;
   const mode: CalendarMode = params.mode === "watched" ? "watched" : "upcoming";
   const now = new Date();
-  const requested = /^\d{4}-\d{2}$/.test(params.month ?? "") ? params.month! : monthKey(now);
+  let requested = /^\d{4}-\d{2}$/.test(params.month ?? "") ? params.month! : monthKey(now);
+  const supabase = await createSupabaseServerClient();
+  const user = supabase ? (await supabase.auth.getUser()).data.user : null;
+  if (!supabase || !user) redirect("/login");
+  if (!params.month && mode === "watched") {
+    const { data: latest } = await supabase.from("watch_events")
+      .select("watched_at")
+      .eq("user_id", user.id)
+      .not("watched_at", "is", null)
+      .order("watched_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (latest?.watched_at) requested = latest.watched_at.slice(0, 7);
+  }
   const [year, month] = requested.split("-").map(Number);
   const start = new Date(Date.UTC(year, month - 1, 1));
   const end = new Date(Date.UTC(year, month, 1));
   const previous = new Date(Date.UTC(year, month - 2, 1));
   const next = new Date(Date.UTC(year, month, 1));
-  const supabase = await createSupabaseServerClient();
-  const user = supabase ? (await supabase.auth.getUser()).data.user : null;
-  if (!supabase || !user) redirect("/login");
 
   let events: CalendarEvent[] = [];
   if (mode === "watched") {
@@ -94,7 +104,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
   return <main className="page"><div className="shell">
     <div className="page-heading-row"><div><div className="eyebrow">Your viewing schedule and diary</div><h1 className="display page-title">Calendar</h1><p className="muted">Switch between episodes due to air and everything you watched.</p></div><Link className="button ghost" href="/history">View full history</Link></div>
-    <nav className="pill-nav calendar-mode" aria-label="Calendar mode"><Link className={mode === "upcoming" ? "active" : ""} href={`/calendar?mode=upcoming&month=${requested}`}><CalendarDays size={14} /> Upcoming</Link><Link className={mode === "watched" ? "active" : ""} href={`/calendar?mode=watched&month=${requested}`}><Check size={14} /> Watched</Link></nav>
+    <nav className="pill-nav calendar-mode" aria-label="Calendar mode"><Link className={mode === "upcoming" ? "active" : ""} href={`/calendar?mode=upcoming`}><CalendarDays size={14} /> Upcoming</Link><Link className={mode === "watched" ? "active" : ""} href={`/calendar?mode=watched`}><Check size={14} /> Watched</Link></nav>
     <div className="calendar-toolbar"><Link className="icon-button" href={monthHref(previous)} aria-label="Previous month"><ChevronLeft size={18} /></Link><h2 className="display">{start.toLocaleDateString("en", { month: "long", year: "numeric", timeZone: "UTC" })}</h2><Link className="icon-button" href={monthHref(next)} aria-label="Next month"><ChevronRight size={18} /></Link></div>
     <div className="calendar-shell"><div className="calendar-weekdays">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => <span key={day}>{day}</span>)}</div><div className="calendar-grid">{cells.map((day, index) => {
       if (!day) return <div className="calendar-cell muted-cell" key={`blank-${index}`} />;
